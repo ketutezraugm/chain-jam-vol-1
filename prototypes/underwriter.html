@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Underwriter — prototype</title>
+<style>
+  :root{--bg:#0a0e14;--panel:#121826;--panel2:#0d1220;--line:#22304a;--ink:#dbe6f5;--dim:#5c7091;--claim:#e0475b;--safe:#3ec98f;--accent:#4d8bf5;--gold:#e0c23e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;display:flex;justify-content:center;padding:32px 16px}
+  .wrap{width:520px;max-width:100%}
+  h1{font-size:18px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;margin:0 0 4px}
+  .sub{font-size:12px;color:var(--dim);margin-bottom:18px;line-height:1.5}
+
+  .stage{
+    height:120px;border:1px solid var(--line);border-radius:8px;position:relative;overflow:hidden;
+    background:
+      linear-gradient(rgba(77,139,245,.05) 1px, transparent 1px) 0 0/100% 22px,
+      radial-gradient(ellipse at 50% 0%, #16203a, var(--panel2));
+    transition:border-color .2s;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .stage.flash-safe{border-color:#1f5c3f}
+  .stage.flash-claim{border-color:#4a2028}
+  .sign{position:absolute;top:10px;left:12px;font-size:11px;color:var(--dim)}
+
+  .stampBox{
+    min-width:250px;text-align:center;padding:12px 10px;border:2px dashed var(--line);
+    border-radius:6px;font-weight:700;font-size:14px;letter-spacing:.05em;color:var(--dim);
+    transform:scale(1) rotate(0deg);transition:transform .25s ease, color .15s;
+  }
+  .stampBox.pending{animation:pulse 1s ease-in-out infinite}
+  .stampBox.slam{transform:scale(1.08) rotate(-3deg)}
+  .stampBox .amt{display:block;font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+  .history{display:flex;gap:4px;justify-content:center;margin-top:10px;height:10px}
+  .history i{width:10px;height:10px;border-radius:2px;background:#22304a}
+  .history i.paid{background:var(--safe)}
+  .history i.claim{background:var(--claim)}
+
+  .deskLabel{margin:18px 0 8px;font-size:11px;color:var(--dim);letter-spacing:.1em;display:flex;justify-content:space-between}
+
+  .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 10px;
+    cursor:pointer;transition:transform .12s, border-color .12s, box-shadow .12s;position:relative;
+  }
+  .card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 6px 18px rgba(77,139,245,.18)}
+  .card.dealing{animation:dealIn .3s ease backwards}
+  @keyframes dealIn{from{opacity:0;transform:translateY(10px)}}
+  .card.dead{pointer-events:none;opacity:.35}
+  .card .client{font-size:11px;color:var(--dim);height:28px;line-height:1.3}
+  .card .mult{font-size:24px;font-weight:700;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+  .card .riskNum{font-size:10px;color:var(--dim)}
+  .card .riskBar{height:5px;border-radius:3px;background:#1b2436;margin:6px 0 8px;overflow:hidden}
+  .card .riskFill{height:100%;border-radius:3px}
+  .terms{font-size:10px;letter-spacing:.06em;font-weight:700;padding:3px 0;border-radius:3px;text-align:center}
+  .terms.good{background:rgba(62,201,143,.15);color:var(--safe)}
+  .terms.fair{background:rgba(92,112,145,.15);color:var(--dim)}
+  .terms.poor{background:rgba(224,71,91,.13);color:var(--claim)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;font-size:11px}
+  .stats div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 4px;text-align:center;color:var(--dim)}
+  .stats .v{font-size:14px;color:var(--ink);display:block;margin-top:3px;font-variant-numeric:tabular-nums}
+  .stats .v.good{color:var(--safe)}
+  .stats .v.bad{color:var(--claim)}
+
+  details{margin-top:16px;font-size:11px;color:var(--dim)}
+  summary{cursor:pointer;user-select:none}
+  .debug{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;line-height:1.7}
+  .debug b{color:var(--ink)}
+  .debug .ok{color:var(--safe)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Underwriter</h1>
+  <div class="sub">Three policies cross your desk each morning. Every one is priced a little differently — your job is to spot which premium is worth the risk. Sign one and live with it.</div>
+
+  <div class="stage" id="stage">
+    <span class="sign">DESK · DAY <span id="round">1</span></span>
+    <div class="stampBox pending" id="stamp">SELECT A POLICY TO UNDERWRITE</div>
+  </div>
+  <div class="history" id="history"></div>
+
+  <div class="deskLabel"><span>TODAY'S APPLICATIONS</span><span>STAKE 100 EACH</span></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="stats">
+    <div>Balance<span class="v" id="balance">10,000</span></div>
+    <div>Policies<span class="v" id="rounds">0</span></div>
+    <div>Session RTP<span class="v" id="rtp">—</span></div>
+    <div>Your pricing<span class="v" id="edge">—</span></div>
+  </div>
+
+  <details>
+    <summary>Math self-check (declared RTP band vs simulated)</summary>
+    <div class="debug" id="debug">running…</div>
+  </details>
+</div>
+
+<script>
+// Each dealt policy carries its own EV, drawn inside the legal 93–98% band.
+// Picking well is a real skill gradient; picking blind still never leaves the band.
+const EV_MIN = 0.93, EV_MAX = 0.98, EV_FAIR = 0.96;
+const P_MIN = 0.06, P_MAX = 0.55;
+const STAKE = 100;
+
+const CLIENTS = ['Fishing trawler','Cargo drone fleet','Rooftop bar','Rally team','Volcano tour bus',
+  'Ice road hauler','Deep-sea rig','Wedding venue','Vineyard harvest','Ferry line','Circus act',
+  'Ski lift operator','Firework depot','Racing stable','Night market'];
+
+let balance = 10000, rounds = 0, wagered = 0, paid = 0, evSum = 0;
+let busy = false, hand = [];
+
+const stage = document.getElementById('stage');
+const stamp = document.getElementById('stamp');
+const cardsEl = document.getElementById('cards');
+const roundEl = document.getElementById('round');
+const historyEl = document.getElementById('history');
+
+const rnd = (lo,hi) => lo + Math.random()*(hi-lo);
+
+function dealHand(){
+  hand = Array.from({length:3}, () => {
+    const p = rnd(P_MIN, P_MAX);
+    const ev = rnd(EV_MIN, EV_MAX);
+    return { p, ev, m: ev/(1-p), client: CLIENTS[Math.floor(Math.random()*CLIENTS.length)] };
+  });
+  renderHand();
+}
+
+function termsOf(ev){
+  if (ev > EV_FAIR + 0.008) return ['good','GOOD TERMS'];
+  if (ev < EV_FAIR - 0.008) return ['poor','POOR TERMS'];
+  return ['fair','FAIR TERMS'];
+}
+
+function renderHand(){
+  cardsEl.innerHTML = '';
+  hand.forEach((c, i) => {
+    const [cls, label] = termsOf(c.ev);
+    const hue = 140*(1 - (c.p-P_MIN)/(P_MAX-P_MIN));
+    const el = document.createElement('div');
+    el.className = 'card dealing';
+    el.style.animationDelay = (i*0.05)+'s';
+    el.innerHTML =
+      `<div class="client">${c.client}</div>
+       <div class="mult">${c.m.toFixed(2)}x</div>
+       <div class="riskNum">claim risk ${(c.p*100).toFixed(0)}%</div>
+       <div class="riskBar"><div class="riskFill" style="width:${(c.p/P_MAX*100).toFixed(0)}%;background:hsl(${hue},60%,50%)"></div></div>
+       <div class="terms ${cls}">${label}</div>`;
+    el.addEventListener('click', () => underwrite(i));
+    cardsEl.appendChild(el);
+  });
+}
+
+// --- tiny synthesized audio engine (no external files) ---
+let actx;
+function audio(){ return actx || (actx = new (window.AudioContext||window.webkitAudioContext)()); }
+function tone(freq, dur, type='sine', gain=0.15, when=0, freqEnd=null){
+  const ctx = audio(); const t0 = ctx.currentTime + when;
+  const osc = ctx.createOscillator(); const g = ctx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0+dur);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain, t0+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function noiseBurst(dur=0.1, gain=0.22, when=0){
+  const ctx = audio(); const t0 = ctx.currentTime + when;
+  const n = Math.floor(ctx.sampleRate*dur);
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain, t0);
+  src.connect(g).connect(ctx.destination); src.start(t0);
+}
+function tick(when=0){ tone(1200, 0.04, 'square', 0.06, when); }
+function stampThud(){ noiseBurst(0.09, 0.2); tone(140, 0.12, 'sine', 0.18); }
+function chime(){ [660,880,1100,1320].forEach((f,i)=>tone(f,0.22,'sine',0.12,i*0.07)); }
+function alarm(){ tone(500,0.5,'sawtooth',0.12,0,220); tone(500,0.5,'sawtooth',0.10,0.25,220); }
+
+function pushHistory(ok){
+  const i = document.createElement('i');
+  i.className = ok ? 'paid' : 'claim';
+  historyEl.appendChild(i);
+  while (historyEl.children.length > 26) historyEl.removeChild(historyEl.firstChild);
+}
+
+function animateCount(el, to, prefix, dur=450){
+  const t0 = performance.now();
+  (function frame(now){
+    const t = Math.min(1, (now-t0)/dur);
+    el.textContent = prefix + (to*(1-Math.pow(1-t,3))).toFixed(0);
+    if (t < 1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+function underwrite(i){
+  if (busy || balance < STAKE) return;
+  busy = true;
+  const c = hand[i];
+  [...cardsEl.children].forEach((el,j) => { if (j!==i) el.classList.add('dead'); });
+
+  stage.classList.remove('flash-safe','flash-claim');
+  stamp.className = 'stampBox pending';
+  stamp.textContent = 'ASSESSING ' + c.client.toUpperCase() + '…';
+  for (let k=0;k<5;k++) tick(k*0.09);
+
+  setTimeout(() => {
+    const claim = Math.random() < c.p;
+    const payout = claim ? 0 : STAKE*c.m;
+    balance += payout - STAKE;
+    wagered += STAKE; paid += payout; rounds++; evSum += c.ev;
+    pushHistory(!claim);
+
+    stage.classList.add(claim ? 'flash-claim' : 'flash-safe');
+    stamp.classList.remove('pending');
+    stamp.classList.add('slam');
+    stampThud();
+    setTimeout(()=>stamp.classList.remove('slam'), 220);
+    stamp.style.color = claim ? 'var(--claim)' : 'var(--safe)';
+
+    if (claim){
+      stamp.innerHTML = 'CLAIM FILED<span class="amt">-100</span>';
+      setTimeout(alarm, 90);
+    } else {
+      stamp.innerHTML = 'POLICY EXPIRED CLEAN<span class="amt" id="amt">+0</span>';
+      setTimeout(chime, 90);
+      animateCount(document.getElementById('amt'), payout, '+');
+    }
+
+    roundEl.textContent = rounds + 1;
+    document.getElementById('balance').textContent = balance.toFixed(0);
+    document.getElementById('rounds').textContent = rounds;
+    document.getElementById('rtp').textContent = (100*paid/wagered).toFixed(1)+'%';
+
+    const avgEv = evSum/rounds;
+    const edgeEl = document.getElementById('edge');
+    edgeEl.textContent = (avgEv*100).toFixed(1)+'%';
+    edgeEl.className = 'v ' + (avgEv > EV_FAIR ? 'good' : avgEv < EV_FAIR - 0.005 ? 'bad' : '');
+
+    busy = false;
+    setTimeout(dealHand, 700);
+  }, 480);
+}
+
+// --- honesty check: worst / blind / sharp play must all land inside 93–98% ---
+function simulate(strategy, n){
+  let total = 0;
+  for (let i=0;i<n;i++){
+    const h = Array.from({length:3}, () => {
+      const p = rnd(P_MIN,P_MAX), ev = rnd(EV_MIN,EV_MAX);
+      return {p, ev, m: ev/(1-p)};
+    });
+    let c;
+    if (strategy === 'sharp') c = h.reduce((a,b)=> b.ev>a.ev?b:a);
+    else if (strategy === 'worst') c = h.reduce((a,b)=> b.ev<a.ev?b:a);
+    else c = h[Math.floor(Math.random()*3)];
+    total += (Math.random() < c.p) ? 0 : c.m;
+  }
+  return total/n;
+}
+window.addEventListener('load', () => {
+  dealHand();
+  const n = 400000;
+  const worst = simulate('worst', n), blind = simulate('blind', n), sharp = simulate('sharp', n);
+  document.getElementById('debug').innerHTML =
+    `Declared band: <b>93–98%</b>. Every dealt policy has EV drawn from that band, so no strategy can leave it.<br>
+     (n=${n.toLocaleString()} each)<br>
+     always picks worst terms → <span class="ok">${(worst*100).toFixed(2)}%</span><br>
+     picks at random → <span class="ok">${(blind*100).toFixed(2)}%</span><br>
+     always picks best terms → <span class="ok">${(sharp*100).toFixed(2)}%</span><br>
+     <b>That spread is the skill gradient</b> — legal, declarable, and it's the whole game.`;
+});
+</script>
+</body>
+</html>

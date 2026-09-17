@@ -1,0 +1,17 @@
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Machine-local Claude Code permissions
+.claude/settings.local.json
+
+# Nothing here builds, but keep these out if tooling arrives later
+node_modules/
+dist/

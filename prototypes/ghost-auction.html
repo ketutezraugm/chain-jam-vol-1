@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ghost Auction — prototype</title>
+<style>
+  :root{--bg:#0a0912;--panel:#161327;--panel2:#100d1e;--line:#2c2650;--ink:#e7e2fa;--dim:#7367a8;--lose:#e0475b;--val:#c9a8ff;--win:#3ec98f;--accent:#8a5cf6}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;display:flex;justify-content:center;padding:32px 16px}
+  .wrap{width:520px;max-width:100%}
+  h1{font-size:18px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;margin:0 0 4px}
+  .sub{font-size:12px;color:var(--dim);margin-bottom:18px;line-height:1.5}
+
+  .stage{
+    height:150px;border:1px solid var(--line);border-radius:8px;position:relative;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 0%, #201a3a, var(--panel2));
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .lotNo{position:absolute;top:10px;left:12px;font-size:11px;color:var(--dim)}
+  .gavel{position:absolute;top:12px;right:16px;font-size:24px;transform-origin:70% 20%}
+  .gavel.slam{animation:slam .38s ease}
+  @keyframes slam{0%{transform:rotate(0)}40%{transform:rotate(-45deg)}60%{transform:rotate(-38deg)}100%{transform:rotate(0)}}
+
+  .vs{display:flex;gap:40px;font-size:11px;color:var(--dim)}
+  .vs .num{font-size:22px;display:block;text-align:center;margin-top:4px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .vs .num.rolling{color:var(--dim)}
+  .valueLine{margin-top:12px;font-size:12px;color:var(--dim);min-height:17px}
+  .valueLine b{color:var(--val);font-variant-numeric:tabular-nums}
+  .result{margin-top:4px;font-size:16px;font-weight:700;opacity:0;transition:opacity .2s;height:20px}
+  .idleMsg{font-size:13px;color:var(--dim);letter-spacing:.05em}
+
+  .history{display:flex;gap:4px;justify-content:center;margin-top:10px;height:10px}
+  .history i{width:10px;height:10px;border-radius:2px;background:#2c2650}
+  .history i.win{background:var(--win)}
+  .history i.lose{background:var(--lose)}
+
+  .floorLabel{margin:18px 0 8px;font-size:11px;color:var(--dim);letter-spacing:.1em;display:flex;justify-content:space-between}
+  .lots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .lot{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 10px;
+    cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;
+  }
+  .lot:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 6px 18px rgba(138,92,246,.2)}
+  .lot.dealing{animation:dealIn .3s ease backwards}
+  @keyframes dealIn{from{opacity:0;transform:translateY(10px)}}
+  .lot.dead{pointer-events:none;opacity:.35}
+  .lot .name{font-size:11px;color:var(--dim);height:28px;line-height:1.3}
+  .lot .scale{font-size:22px;font-weight:700;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+  .lot .scaleSub{font-size:9px;color:var(--dim)}
+  .lot .rivalNum{font-size:10px;color:var(--dim);margin-top:8px}
+  .lot .rivalBar{height:5px;border-radius:3px;background:#221d3d;margin-top:5px;overflow:hidden}
+  .lot .rivalFill{height:100%;border-radius:3px}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;font-size:11px}
+  .stats div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;text-align:center;color:var(--dim)}
+  .stats .v{font-size:14px;color:var(--ink);display:block;margin-top:3px;font-variant-numeric:tabular-nums}
+
+  details{margin-top:16px;font-size:11px;color:var(--dim)}
+  summary{cursor:pointer;user-select:none}
+  .debug{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;line-height:1.7}
+  .debug b{color:var(--ink)}
+  .debug .ok{color:var(--val)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ghost Auction</h1>
+  <div class="sub">Three sealed lots on the floor, each drawing a different crowd. Take the contested one and you rarely win it — take the quiet one and you win cheap, but the lot inside is worth less. Its real value is only revealed once the gavel falls.</div>
+
+  <div class="stage" id="stage">
+    <span class="lotNo">FLOOR · ROUND <span id="round">1</span></span>
+    <span class="gavel" id="gavel">🔨</span>
+    <div class="idleMsg" id="idleMsg">CHOOSE A LOT TO BID ON</div>
+    <div class="vs" id="vs" style="display:none">
+      <div>YOUR BID<span class="num" id="bidNum">—</span></div>
+      <div>TOP RIVAL<span class="num" id="rivalNum">—</span></div>
+    </div>
+    <div class="valueLine" id="valueLine"></div>
+    <div class="result" id="result"></div>
+  </div>
+  <div class="history" id="history"></div>
+
+  <div class="floorLabel"><span>LOTS ON THE FLOOR</span><span>BID 100 EACH</span></div>
+  <div class="lots" id="lots"></div>
+
+  <div class="stats">
+    <div>Balance<span class="v" id="balance">10,000</span></div>
+    <div>Lots bid<span class="v" id="rounds">0</span></div>
+    <div>Session RTP<span class="v" id="rtp">—</span></div>
+  </div>
+
+  <details>
+    <summary>Math self-check (declared RTP vs simulated)</summary>
+    <div class="debug" id="debug">running…</div>
+  </details>
+</div>
+
+<script>
+const RTP = 0.96;
+const STAKE = 100;
+const V_CAP = 10;
+const A_MIN = 0.15, A_MAX = 0.85;
+
+const LOTS = ['Sealed estate crate','Unmarked pallet','Salvage claim','Bank vault box','Storage unit 14',
+  'Dockside container','Attic consignment','Repossessed safe','Anonymous donation','Customs surplus'];
+
+let balance = 10000, rounds = 0, wagered = 0, paid = 0;
+let busy = false, floor = [];
+
+const gavel = document.getElementById('gavel');
+const resultEl = document.getElementById('result');
+const roundEl = document.getElementById('round');
+const bidNum = document.getElementById('bidNum');
+const rivalNum = document.getElementById('rivalNum');
+const valueLine = document.getElementById('valueLine');
+const lotsEl = document.getElementById('lots');
+const historyEl = document.getElementById('history');
+const idleMsg = document.getElementById('idleMsg');
+const vsEl = document.getElementById('vs');
+
+const rnd = (lo,hi) => lo + Math.random()*(hi-lo);
+const kOf = a => RTP/a;   // every lot carries the same EV; only the shape differs
+
+function dealFloor(){
+  floor = Array.from({length:3}, () => {
+    const a = rnd(A_MIN, A_MAX);
+    return { a, k: kOf(a), name: LOTS[Math.floor(Math.random()*LOTS.length)] };
+  });
+  renderFloor();
+}
+
+function renderFloor(){
+  lotsEl.innerHTML = '';
+  floor.forEach((l, i) => {
+    const contest = 1-l.a;                       // how hard the crowd fights for it
+    const hue = 280 - 120*contest;
+    const el = document.createElement('div');
+    el.className = 'lot dealing';
+    el.style.animationDelay = (i*0.05)+'s';
+    el.innerHTML =
+      `<div class="name">${l.name}</div>
+       <div class="scale">${l.k.toFixed(2)}x</div>
+       <div class="scaleSub">× revealed value</div>
+       <div class="rivalNum">win chance ${(l.a*100).toFixed(0)}%</div>
+       <div class="rivalBar"><div class="rivalFill" style="width:${(l.a*100).toFixed(0)}%;background:hsl(${hue},65%,60%)"></div></div>`;
+    el.addEventListener('click', () => bid(i));
+    lotsEl.appendChild(el);
+  });
+}
+
+// --- tiny synthesized audio engine ---
+let actx;
+function audio(){ return actx || (actx = new (window.AudioContext||window.webkitAudioContext)()); }
+function tone(freq, dur, type='sine', gain=0.15, when=0, freqEnd=null){
+  const ctx = audio(); const t0 = ctx.currentTime + when;
+  const osc = ctx.createOscillator(); const g = ctx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0+dur);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain, t0+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function noiseBurst(dur=0.12, gain=0.2, when=0){
+  const ctx = audio(); const t0 = ctx.currentTime + when;
+  const n = Math.floor(ctx.sampleRate*dur);
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain, t0);
+  src.connect(g).connect(ctx.destination); src.start(t0);
+}
+function murmur(when=0){ tone(200+Math.random()*80, 0.06, 'triangle', 0.03, when); }
+function gavelThud(){ noiseBurst(0.1, 0.25); tone(120, 0.15, 'sine', 0.2); }
+function winFanfare(v){
+  const notes = Math.min(6, 2+Math.round(v));
+  for (let i=0;i<notes;i++) tone(520+i*90, 0.18, 'sine', 0.13, i*0.06);
+}
+function loseWomp(){ tone(260, 0.3, 'sawtooth', 0.12, 0, 100); }
+
+function animateCount(el, to, prefix, dur=500){
+  const t0 = performance.now();
+  (function frame(now){
+    const t = Math.min(1, (now-t0)/dur);
+    const v = to*(1-Math.pow(1-t,3));
+    el.textContent = prefix + (to < 20 ? v.toFixed(2) : v.toFixed(0));
+    if (t < 1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+function pushHistory(win){
+  const i = document.createElement('i');
+  i.className = win ? 'win' : 'lose';
+  historyEl.appendChild(i);
+  while (historyEl.children.length > 26) historyEl.removeChild(historyEl.firstChild);
+}
+
+const valueOf = r => Math.min(-Math.log(1-r), V_CAP);
+
+function bid(i){
+  if (busy || balance < STAKE) return;
+  busy = true;
+  const lot = floor[i];
+  [...lotsEl.children].forEach((el,j) => { if (j!==i) el.classList.add('dead'); });
+
+  idleMsg.style.display = 'none';
+  vsEl.style.display = 'flex';
+  resultEl.style.opacity = 0;
+  valueLine.textContent = '';
+  bidNum.textContent = (lot.a*100).toFixed(0)+'%';
+  rivalNum.classList.add('rolling');
+
+  let rolls = 0;
+  const roll = setInterval(() => {
+    rivalNum.textContent = Math.floor(Math.random()*100)+'%';
+    murmur();
+    if (++rolls > 8) clearInterval(roll);
+  }, 45);
+
+  setTimeout(() => {
+    clearInterval(roll);
+    // One VRF reveal would be hash-split into these two draws in the real SDK.
+    const r1 = Math.random(), r2 = Math.random();
+    const win = lot.a > r1;
+    const V = valueOf(r2);
+    const payout = win ? STAKE*V*lot.k : 0;
+
+    balance += payout - STAKE;
+    wagered += STAKE; paid += payout; rounds++;
+    pushHistory(win);
+
+    gavel.classList.remove('slam'); void gavel.offsetWidth;
+    gavel.classList.add('slam');
+    gavelThud();
+
+    rivalNum.classList.remove('rolling');
+    rivalNum.textContent = (r1*100).toFixed(0)+'%';
+
+    if (win){
+      valueLine.innerHTML = 'lot opens at <b id="valAmt">0.00</b>× value';
+      resultEl.style.color = 'var(--win)';
+      resultEl.innerHTML = 'WON — <span id="payAmt">+0</span>';
+      resultEl.style.opacity = 1;
+      animateCount(document.getElementById('valAmt'), V, '');
+      animateCount(document.getElementById('payAmt'), payout, '+');
+      setTimeout(()=>winFanfare(V), 120);
+    } else {
+      resultEl.style.color = 'var(--lose)';
+      resultEl.textContent = 'OUTBID';
+      resultEl.style.opacity = 1;
+      setTimeout(loseWomp, 120);
+    }
+
+    roundEl.textContent = rounds + 1;
+    document.getElementById('balance').textContent = balance.toFixed(0);
+    document.getElementById('rounds').textContent = rounds;
+    document.getElementById('rtp').textContent = (100*paid/wagered).toFixed(1)+'%';
+
+    busy = false;
+    setTimeout(() => { resultEl.style.opacity = 0; dealFloor(); }, 1100);
+  }, 430);
+}
+
+// --- honesty check ---
+function simulate(pick, n){
+  let total = 0;
+  for (let i=0;i<n;i++){
+    const f = Array.from({length:3}, () => { const a = rnd(A_MIN,A_MAX); return {a, k: kOf(a)}; });
+    let l;
+    if (pick === 'safe') l = f.reduce((x,y)=> y.a>x.a?y:x);
+    else if (pick === 'greedy') l = f.reduce((x,y)=> y.a<x.a?y:x);
+    else l = f[Math.floor(Math.random()*3)];
+    if (l.a > Math.random()) total += valueOf(Math.random())*l.k;
+  }
+  return total/n;
+}
+window.addEventListener('load', () => {
+  dealFloor();
+  const n = 400000;
+  const safe = simulate('safe', n), blind = simulate('blind', n), greedy = simulate('greedy', n);
+  document.getElementById('debug').innerHTML =
+    `Declared RTP: <b>${(RTP*100).toFixed(1)}%</b> on every lot — payout scale is defined as RTP/(win chance), so the choice is pure volatility.<br>
+     (n=${n.toLocaleString()} each)<br>
+     always takes the quiet lot → <span class="ok">${(safe*100).toFixed(2)}%</span><br>
+     picks at random → <span class="ok">${(blind*100).toFixed(2)}%</span><br>
+     always takes the contested lot → <span class="ok">${(greedy*100).toFixed(2)}%</span><br>
+     Payout on a win is itself random (the revealed value), so this is a spread, not a fixed jackpot.`;
+});
+</script>
+</body>
+</html>
