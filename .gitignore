@@ -15,3 +15,11 @@ Desktop.ini
 # Nothing here builds, but keep these out if tooling arrives later
 node_modules/
 dist/
+
+# Chain casino SDK local dev/test stack (simulator, coinflip example, docs) —
+# reference tooling only, not part of the submission; re-download from
+# sdk.chain.wtf/casino if missing.
+/casino-sdk/
+
+# Stale download artifact, locked on Windows — see if it can be removed later
+.sdk-download/

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "gameId": "ChipThiefGame",
+  "apiVersion": 1,
+  "defaultLocale": "en",
+  "locales": {
+    "en": {
+      "name": "Chip Thief",
+      "description": "CCTV footage of a goose robbing a casino floor and running for the fire exit. One button, one scripted run, settled by on-chain randomness."
+    }
+  },
+  "presentation": {
+    "mode": "full-iframe",
+    "hostPanels": {
+      "openSession": false,
+      "history": false,
+      "status": false
+    }
+  },
+  "capabilities": {
+    "openSession": true,
+    "submitAction": false,
+    "forfeitExpiredSession": false,
+    "cancelStuckRandomness": false,
+    "resize": true
+  }
+}
