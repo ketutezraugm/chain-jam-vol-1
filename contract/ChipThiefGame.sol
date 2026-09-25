@@ -10,14 +10,14 @@ import {
 
 /// @title Chip Thief — a goose robs a casino floor, one scripted run per bet.
 /// @notice Mirrors prototypes/chip-thief.html's `RUN` paytable and `drawOutcome()`
-///         exactly (same lam/mu/tables, same declared 96.0% RTP). This is an
+///         exactly (same lam/tables, same declared 96.0% RTP). This is an
 ///         "instant" game (ICasinoGameV2 §2.3): onSessionStart requests
 ///         randomness, onRandomness settles in one step, no player actions.
 ///
 /// Randomness expansion: the facet hands us exactly one bytes32 VRF word, but
-/// the client-side model rolls up to ~44 independent values per run (per-chip
-/// land/value, per-multiplier land/tier, per-staff land/tier, leap survival,
-/// gauntlet survival). Each draw reads the top 64 bits of
+/// the client-side model rolls up to ~40 independent values per run (per-chip
+/// land/value, per-multiplier land/tier, per-staff land/tier, leap survival).
+/// Each draw reads the top 64 bits of
 /// keccak256(randomness, idx) for a fresh idx — this is a direct comparison
 /// against a 2^64-domain threshold, not a narrow-domain modulo (unlike the
 /// classic "byte % 6" case in RANDOMNESS_DICE.md), so no rejection sampling
@@ -30,47 +30,44 @@ import {
 /// so this contract collapses that into a single draw against (1-LAM)^K —
 /// bit-identical distribution, far less gas.
 ///
-/// Payout cap: the client math's absolute combinatorial ceiling is
-/// astronomically unlikely (~1,650x wager) but was never designed to be an
-/// honest on-chain risk figure. A 30M-run simulation of the exact paytable
-/// never produced a payout above 250x; this contract hard-caps settlement at
-/// 300x wager. That cap is unreachable in practice (P < ~3e-8 per the sim)
-/// and moves the declared 96.0% RTP by nothing at reportable precision — see
-/// the repo's payout_tail_sim.js analysis.
+/// Payout cap: settlement is hard-capped at 100x wager. In a 40M-run simulation
+/// only ~1 in 52,000 runs (two jackpot chips plus a multiplier) exceeds it, which
+/// trims RTP by ~0.05% (96.0% uncapped, ~95.9% effective). That keeps
+/// maxPayout/wager at the facet's default heavy-tail threshold (100) rather than
+/// over it, and the vault's per-bet reserve at 99x.
 contract ChipThiefGame is ICasinoGameV2 {
   uint256 internal constant WAD = 1e18;
   uint256 internal constant TWO64 = 18446744073709551616; // 2^64
 
   // ---- paytable constants, mirroring prototypes/chip-thief.html RUN ----
   uint256 internal constant CHIP_N = 15;
-  uint256 internal constant MULT_N = 3;
+  uint256 internal constant MULT_N = 2;
   uint256 internal constant STEAL_N = 3;
-  uint256 internal constant LAM_WAD = 22e15; // 0.022 per-leap catch chance
-  // MU (0.07 gauntlet chance) is folded directly into GAUNTLET_SURV_THRESH_64.
+  uint256 internal constant LAM_WAD = 24e15; // 0.024 per-leap catch chance
 
-  // RTP/rawEV(RUN) solved once offline so declared RTP == 96.0% exactly;
-  // see docs/README or payout_tail_sim.js for the derivation.
-  uint256 internal constant SCALE_WAD = 175617425823751168;
+  // RTP/rawEV(RUN) solved once offline so declared RTP == 96.0% exactly.
+  uint256 internal constant SCALE_WAD = 255745803546881984;
 
-  uint256 internal constant CAP_MULTIPLIER = 300; // hard on-chain payout ceiling, x wager
+  uint256 internal constant CAP_MULTIPLIER = 100; // hard on-chain payout ceiling, x wager
 
   // ---- 64-bit thresholds: draw succeeds iff top64(hash) < THRESH ----
-  uint64 internal constant CHIP_GOT_THRESH_64 = 9223372036854775808; // 0.50
-  uint64 internal constant MULT_GOT_THRESH_64 = 4058283696216101355; // 0.22
+  // All derived as floor(bps * 2^64 / 10000) — exact integer math, no floats.
+  uint64 internal constant CHIP_GOT_THRESH_64 = 12543785970122495098; // 0.68
+  uint64 internal constant MULT_GOT_THRESH_64 = 2029141848108050677; // 0.11
   uint64 internal constant STAFF_GOT_THRESH_64 = 2767011611056432742; // 0.15
-  uint64 internal constant GAUNTLET_SURV_THRESH_64 = 17155471988549883002; // 0.93 (survive)
 
   // Chip value tiers (already scaled by the client's chips.s=0.20, WAD) with
-  // cumulative selection thresholds; weights 4000/2900/1800/850/370/80 bps.
-  uint64 internal constant CHIP_CUM_0 = 7378697629483820646; // 0.40
-  uint64 internal constant CHIP_CUM_1 = 12728253410859590615; // 0.69
-  uint64 internal constant CHIP_CUM_2 = 16048667344127309905; // 0.87
-  uint64 internal constant CHIP_CUM_3 = 17616640590392621793; // 0.955
-  uint64 internal constant CHIP_CUM_4 = 18299170121119875203; // 0.992
+  // cumulative selection thresholds; weights 2800/3500/2700/894/100/6 bps.
+  // Face values 0.5/1/2.5/5/25/350 (x0.2): the last two are the plaque and the jackpot.
+  uint64 internal constant CHIP_CUM_0 = 5165088340638674452; // 0.28
+  uint64 internal constant CHIP_CUM_1 = 11621448766437017518; // 0.63
+  uint64 internal constant CHIP_CUM_2 = 16602069666338596454; // 0.90
+  uint64 internal constant CHIP_CUM_3 = 18251208586528230368; // 0.9894
+  uint64 internal constant CHIP_CUM_4 = 18435676027265325885; // 0.9994
 
-  // Multiplier tiers m=2,3,5; weights 5000/3500/1500 bps.
-  uint64 internal constant MULT_CUM_0 = 9223372036854775808; // 0.50
-  uint64 internal constant MULT_CUM_1 = 15679732462653118873; // 0.85
+  // Multiplier tiers m=2,3,4; weights 7000/2700/300 bps.
+  uint64 internal constant MULT_CUM_0 = 12912720851596686131; // 0.70
+  uint64 internal constant MULT_CUM_1 = 17893341751498265067; // 0.97
 
   // Staff contact cut f=0.20,0.30,0.40 (WAD); weights 4500/3500/2000 bps.
   uint64 internal constant STAFF_CUM_0 = 8301034833169298227; // 0.45
@@ -104,15 +101,14 @@ contract ChipThiefGame is ICasinoGameV2 {
     )
   {
     maxPayout = wager * CAP_MULTIPLIER;
-    // Conservative proxy for the top tier: the empirically-measured
-    // P(payout >= 200x) ~= 2e-7 (30M-run sim), used instead of the unmeasurably
-    // small P(payout >= 300x) since overstating tail risk is the safe
-    // direction for vault solvency.
-    probabilityWad = 2e11; // 2e-7 * 1e18
-    expectedPayout = (wager * 96) / 100; // 96.0% RTP
-    // sigma_body ~= 1.9556x per unit wager, empirically stable across every
-    // tail-cut threshold tested; rounded up slightly (1.96x) for margin.
-    uint256 bodySigmaWad = 1960000000000000000; // 1.96e18
+    // Top tier = payouts >= 30x: the 40M-run sim measured P ~= 7.5e-4; rounded
+    // up to 8e-4, since overstating tail risk is the safe direction for vault
+    // solvency.
+    probabilityWad = 8e14; // 8e-4 * 1e18
+    expectedPayout = (wager * 96) / 100; // 96.0% RTP (uncapped; ~95.9% after the cap)
+    // sigma_body ~= 1.40x per unit wager with the >=30x tier removed; rounded
+    // up to 1.5x for margin.
+    uint256 bodySigmaWad = 15e17;
     uint256 bodySigma = (wager * bodySigmaWad) / WAD;
     bodyVarianceScaled = bodySigma * bodySigma * WAD;
   }
@@ -197,7 +193,6 @@ contract ChipThiefGame is ICasinoGameV2 {
     // survivalWad <= 1e18, TWO64 ~= 1.8e19 -> product ~= 1.8e37, safe.
     uint256 survive64 = (survivalWad * TWO64) / WAD;
     if (_draw64(randomness, idx++) >= survive64) return 0; // caught mid-run
-    if (_draw64(randomness, idx++) >= GAUNTLET_SURV_THRESH_64) return 0; // caught at the door
 
     uint256 multiplierWad = (SCALE_WAD * chipSumWad) / WAD;
     multiplierWad = (multiplierWad * multProdWad) / WAD;
@@ -217,14 +212,14 @@ contract ChipThiefGame is ICasinoGameV2 {
     if (roll < CHIP_CUM_1) return 2e17; // 1.0 * 0.20
     if (roll < CHIP_CUM_2) return 5e17; // 2.5 * 0.20
     if (roll < CHIP_CUM_3) return 1e18; // 5.0 * 0.20
-    if (roll < CHIP_CUM_4) return 24e17; // 12.0 * 0.20
-    return 5e18; // 25.0 * 0.20 (jackpot)
+    if (roll < CHIP_CUM_4) return 5e18; // 25.0 * 0.20 (plaque)
+    return 70e18; // 350.0 * 0.20 (jackpot)
   }
 
   function _multTierValue(uint64 roll) internal pure returns (uint256) {
     if (roll < MULT_CUM_0) return 2;
     if (roll < MULT_CUM_1) return 3;
-    return 5;
+    return 4;
   }
 
   function _staffTierFWad(uint64 roll) internal pure returns (uint256) {

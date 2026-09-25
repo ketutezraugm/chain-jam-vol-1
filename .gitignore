@@ -23,3 +23,6 @@ dist/
 
 # Stale download artifact, locked on Windows — see if it can be removed later
 .sdk-download/
+
+# Claude Design exports — reference only, not part of the submission
+/Asset/

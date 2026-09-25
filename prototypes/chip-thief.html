@@ -4,13 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chip Thief — CAM 04</title>
+<meta name="description" content="A goose robs a casino floor and runs for the fire exit. One button, one scripted run, settled by on-chain randomness. A Chain Jam Vol. 1 entry.">
+<meta name="theme-color" content="#080b09">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Chip Thief — CAM 04">
+<meta property="og:description" content="CCTV footage of a goose robbing a casino floor. One button, one scripted run, settled by on-chain randomness.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23080b09'/%3E%3Cpath d='M4.2 16Q4.2 11.8 6.2 9.8' stroke='%23fdfaf3' stroke-width='3.2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='7.2' r='3.6' fill='%23fdfaf3'/%3E%3Cpath d='M10.1 5.6L14.8 7.3 10.1 9Z' fill='%23f2a03c'/%3E%3Ccircle cx='7.9' cy='6.3' r='.95' fill='%23231a14'/%3E%3Ccircle cx='12.7' cy='12.7' r='1.9' fill='%23ff5a52'/%3E%3C/svg%3E">
 <!-- Chain Jam Vol. 1 entry widget (required): proves the entry, tracks plays
      on the standalone page only (it no-ops inside the chain.wtf iframe). -->
 <script async src="https://jam.chain.wtf/widget.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="./vendor/fonts/jetbrains-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Self-hosted (SIL OFL, see vendor/fonts/OFL.txt): no third-party request can delay the first paint. */
+  @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:100 800;font-display:swap;
+    src:url('./vendor/fonts/jetbrains-mono-latin-wght.woff2') format('woff2')}
   :root{
     --void:#080b09; --panel:#0d1411; --panel2:#101a15; --line:#1e2c24; --line2:#2c4034;
     --ink:#cfe5d6; --sys:#5fd39a; --mid:#8fbfa4; --dim:#4e6a5c; --alert:#ff5a52;
@@ -31,7 +38,13 @@
   .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
     padding-bottom:9px;border-bottom:1px solid var(--line)}
   .topbar h1{font:800 16px/1 var(--mono);letter-spacing:.2em}
-  .topbar .sub{font:500 9px/1 var(--mono);letter-spacing:.3em;color:var(--dim)}
+  .topbar h1::before{content:'';display:inline-block;width:6px;height:6px;margin-right:8px;border-radius:50%;
+    background:var(--alert);vertical-align:middle;position:relative;top:-1px}
+  .topbar .sub{font:500 9px/1 var(--mono);letter-spacing:.3em;color:var(--dim);margin-left:auto}
+  .snd{background:none;border:1px solid var(--line2);color:var(--mid);font:700 9px/1 var(--mono);
+    letter-spacing:.2em;padding:6px 9px;cursor:pointer}
+  .snd:hover{color:var(--ink)} .snd[aria-pressed="false"]{color:var(--dim)}
+  .snd:focus-visible,.go:focus-visible,.stake button:focus-visible{outline:2px solid var(--sys);outline-offset:2px}
 
   .feed{position:relative;background:var(--panel);aspect-ratio:16/9;
     width:100%;max-width:calc((100vh - 128px) * 16 / 9);max-height:100%;
@@ -80,6 +93,8 @@
   .verdict{position:absolute;z-index:4;left:5%;top:26%;max-width:44%;opacity:0;transition:opacity .2s;pointer-events:none}
   .verdict .stamp{display:inline-block;padding:6px 15px;border:1px solid var(--ink);
     font:700 11px/1 var(--mono);letter-spacing:.3em;color:var(--ink);background:rgba(13,20,17,.55)}
+  .verdict[data-result="win"] .stamp{border-color:var(--sys);color:var(--sys)}
+  .verdict[data-result="caught"] .stamp,.verdict[data-result="partial"] .stamp{border-color:var(--alert);color:var(--alert)}
   .verdict .line{font:700 13px/1.5 var(--mono);letter-spacing:.24em;color:var(--ink);margin-top:18px;text-shadow:0 0 9px var(--panel)}
   .verdict .note{font:500 9.5px/1.7 var(--mono);letter-spacing:.2em;color:rgba(95,211,154,.8);margin-top:14px;text-shadow:0 0 9px var(--panel)}
 
@@ -120,6 +135,76 @@
   ::-webkit-scrollbar{width:7px}
   ::-webkit-scrollbar-track{background:var(--panel)}
   ::-webkit-scrollbar-thumb{background:var(--line2)}
+  /* idle hint + first-run operator notes (spec: Asset kit §03/§04) */
+  .veil{display:none;background:rgba(8,11,9,.55)}
+  .feed.notes-up .veil{display:block}
+  .feed.notes-up .rec,.feed.notes-up .hud.r,.feed.notes-up .hint{visibility:hidden}
+  .hint{position:absolute;z-index:3;left:0;right:0;bottom:30px;display:flex;justify-content:center;align-items:center;
+    gap:10px;font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--ink);text-shadow:0 0 9px var(--panel);pointer-events:none}
+  .hint[hidden]{display:none}
+  .hint i{width:8px;height:13px;background:var(--sys);animation:cursor 1s steps(1) infinite}
+  @keyframes cursor{0%{opacity:1}50%,100%{opacity:0}}
+  .notes{position:absolute;inset:0;z-index:5;pointer-events:none}
+  .notes[hidden]{display:none}
+  .noterow{position:absolute;left:3.6%;right:3.6%;top:18%;display:flex;gap:32px}
+  .onote{flex:0 1 300px;min-width:0;background:var(--panel);border:1px solid rgba(95,211,154,.35);padding:12px 14px;
+    display:flex;flex-direction:column;gap:8px;visibility:hidden}
+  .onote h3{font:700 10px/1 var(--mono);letter-spacing:.16em;color:var(--sys)}
+  .onote p{font:500 10px/1.6 var(--mono);letter-spacing:.06em;color:var(--ink)}
+  .leaders{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ack{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);pointer-events:auto;padding:9px 16px;
+    border:1px solid var(--ink);background:rgba(13,20,17,.85);color:var(--ink);font:700 11px/1 var(--mono);
+    letter-spacing:.3em;cursor:pointer}
+  .ack:hover,.ack:focus-visible{background:var(--ink);color:var(--void)}
+  .ackhint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font:500 9px/1 var(--mono);letter-spacing:.2em;color:var(--dim)}
+  /* big-win tiers (spec: Asset kit §02): every element hard-cuts in, no easing, no count-up */
+  .verdict{display:flex;flex-direction:column;align-items:flex-start}
+  .vclass,.vbig,.vredact{display:none}
+  .verdict.bwv{transition:none}
+  .verdict.bwv .vclass,.verdict.bwv .vbig,.verdict.bwv .vredact{display:block}
+  .verdict.bwv .note{display:none}
+  .verdict.bwv > *{visibility:hidden}
+  .verdict.bwv > .show{visibility:visible}
+  .verdict[data-tier="jackpot"]{top:22%}
+  .vclass{padding:6px 10px;background:var(--ink);color:var(--void);font:800 11px/1 var(--mono);letter-spacing:.3em;margin-bottom:10px}
+  .verdict[data-tier="jackpot"] .vclass{background:var(--alert)}
+  .vbig .rl{display:block;margin-top:22px;font:700 9.5px/1 var(--mono);letter-spacing:.3em;color:rgba(95,211,154,.8)}
+  .vbig .fig{display:block;margin-top:8px;font:800 48px/1 var(--mono);color:var(--ink);text-shadow:0 0 18px rgba(207,229,214,.25)}
+  .verdict[data-tier="jackpot"] .vbig .fig{font-size:72px;text-shadow:0 0 22px rgba(207,229,214,.28)}
+  .vbig .net{display:block;margin-top:10px;font:700 13px/1 var(--mono);letter-spacing:.24em;color:var(--sys)}
+  .vredact{margin-top:20px;flex-direction:column;gap:9px;font:500 9.5px/1 var(--mono);letter-spacing:.2em;color:rgba(95,211,154,.8)}
+  .verdict.bwv .vredact{display:flex}
+  .vredact div{display:flex;align-items:center;gap:8px}
+  .vredact i{display:block;height:9px;background:var(--ink)}
+  .bw,.lift{position:absolute;inset:0;z-index:4;pointer-events:none}
+  .bw[hidden],.lift[hidden],.bw-alarm[hidden],.bw-enh[hidden]{display:none}
+  .bw-band{position:absolute;left:0;right:0;top:64%;height:14px;opacity:.8;visibility:hidden;
+    background:repeating-linear-gradient(0deg,rgba(207,229,214,.16) 0 2px,rgba(0,0,0,.35) 2px 5px)}
+  .bw-band.show{visibility:visible}
+  .bw-alarm{position:absolute;inset:-1px;border-radius:20px/13px;
+    box-shadow:inset 0 0 0 3px var(--alert),inset 0 0 48px rgba(255,90,82,.22)}
+  .bw-top{position:absolute;top:52px;left:0;right:0;text-align:center;font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--sys)}
+  .bw-top.red{color:var(--alert)}
+  .bw-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .bw-enh{position:absolute;right:18px;top:78px;width:300px;height:169px;border:1px solid var(--ink);background:var(--void)}
+  .bw-enh canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+  .bw-cap{position:absolute;left:0;top:0;padding:5px 8px;background:var(--panel);font:700 9px/1 var(--mono);letter-spacing:.2em;color:var(--ink)}
+  .pbars{display:inline-flex;gap:2px;margin-right:6px;vertical-align:middle}
+  .pbars i{display:block;width:3px;height:8px;background:currentColor}
+  .feed.hold .rec i{animation:none;opacity:1}
+  .feed.jp .rec{visibility:hidden}
+  .lm{position:absolute;width:24px;height:24px}
+  .lm.tl{left:40px;top:76px;border-left:2px solid var(--ink);border-top:2px solid var(--ink)}
+  .lm.tr{right:40px;top:76px;border-right:2px solid var(--ink);border-top:2px solid var(--ink)}
+  .lm.bl{left:40px;bottom:84px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .lm.br{right:40px;bottom:84px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .lift-ret{position:absolute;width:104px;height:104px;border:1.5px solid var(--sys);transform:translate(-50%,-50%)}
+  .lift-ret b{position:absolute;left:-1.5px;bottom:calc(100% + 8px);white-space:pre;background:var(--panel);
+    border:1px solid rgba(95,211,154,.35);padding:8px;font:700 10px/1.5 var(--mono);letter-spacing:.06em;color:var(--sys)}
+  /* keep last: it has to override the animation declarations above */
+  @media (prefers-reduced-motion:reduce){
+    .feed.shaking,.roll,.ov.hiss,.ov.drop,.ov.dropc,.rec i,.tick,.hint i{animation:none}
+  }
 </style>
 </head>
 <body>
@@ -129,11 +214,13 @@
     <div class="topbar">
       <h1>CHIP THIEF</h1>
       <div class="sub">SURVEILLANCE BUILD · FLOOR 1 · RTP 96.0%</div>
+      <button id="snd" class="snd" type="button" aria-pressed="true" title="Toggle sound (M)">SOUND ON</button>
     </div>
 
     <div class="stage">
     <div class="feed" id="feed">
-      <canvas id="cv"></canvas>
+      <canvas id="cv" role="img" aria-label="Security camera feed: a goose runs a casino floor toward the fire exit"></canvas>
+      <div class="ov veil"></div>
       <div class="roll"></div>
       <div class="ov scan"></div>
       <div class="ov hiss"></div>
@@ -144,7 +231,7 @@
       <div class="ov bezel"></div>
 
       <div class="burn tl">CAM 04 · FLOOR 1<br><span id="statusLine">NO INCIDENT · 800m TO FIRE EXIT</span></div>
-      <div class="burn tr"><span id="clock">03:13:44.02</span><br><span>SAT · 25 FPS</span></div>
+      <div class="burn tr"><span id="clock">03:13:44.02</span><br><span id="fpsTxt">SAT · 25 FPS</span></div>
       <div class="rec"><i></i><span>REC</span></div>
 
       <div class="hud l">
@@ -157,10 +244,40 @@
         <div>RECOVERED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b id="recovered">0</b></div>
       </div>
 
-      <div class="verdict" id="verdict">
+      <div class="hint" id="hint"><span id="hintTxt">SPACE TO RELEASE</span><i></i></div>
+
+      <div class="notes" id="notes" hidden>
+        <div class="noterow">
+          <div class="onote" data-n="1"><h3>NOTE 1/3 · STAKE</h3><p>AMOUNT AT RISK FOR ONE RUN. SET IN THE STAKE PANEL BEFORE RELEASE.</p></div>
+          <div class="onote" data-n="2"><h3>NOTE 2/3 · IN BEAK</h3><p>CHIPS HELD BY THE SUBJECT, AS A MULTIPLE OF STAKE. PAID IF THE SUBJECT REACHES THE EXIT.</p></div>
+          <div class="onote" data-n="3"><h3>NOTE 3/3 · DETENTION</h3><p>IF STAFF DETAIN THE SUBJECT, ALL ASSETS ARE RECOVERED. THE HOUSE RETAINS THE STAKE.</p></div>
+        </div>
+        <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+        <button class="ack" id="ack" type="button">ACKNOWLEDGE</button>
+        <div class="ackhint">ENTER · OR SPACE TO RELEASE</div>
+      </div>
+
+      <div class="verdict" id="verdict" role="status" aria-live="polite">
+        <div class="vclass" id="vClass"></div>
         <div class="stamp" id="vStamp">CONTAINMENT FAILED</div>
         <div class="line" id="vLine">SUBJECT LEFT THE<br>BUILDING</div>
         <div class="note" id="vNote">ASSET RECOVERY: 0.00x</div>
+        <div class="vbig" id="vBig"></div>
+        <div class="vredact" id="vRedact"></div>
+      </div>
+
+      <!-- big-win overlays (BIG >=5x, JACKPOT >=10x) and the jackpot-chip lift -->
+      <div class="bw" id="bw" hidden>
+        <div class="bw-band" id="bwBand"></div>
+        <div class="bw-alarm" id="bwAlarm" hidden></div>
+        <div class="bw-top" id="bwTop"></div>
+        <svg class="bw-svg" id="bwSvg" aria-hidden="true"></svg>
+        <div class="bw-enh" id="bwEnh" hidden><canvas id="enh" width="165" height="93"></canvas><div class="bw-cap" id="enhCap"></div></div>
+      </div>
+      <div class="lift" id="lift" hidden aria-hidden="true">
+        <i class="lm tl"></i><i class="lm tr"></i><i class="lm bl"></i><i class="lm br"></i>
+        <div class="bw-top" id="liftTop"></div>
+        <div class="lift-ret" id="liftRet"><b id="liftLbl"></b></div>
       </div>
     </div>
     </div>
@@ -234,34 +351,34 @@ const MONO = "'JetBrains Mono',ui-monospace,monospace";
 
 // chips are the only other object that survives the camera's colour response
 const CHIPS = [
-  {v:0.5,  w:0.400, face:'#d9b566', ring:'#fff3cf', core:'#fff3cf', label:'.5',  shape:'chip', bloom:9},
-  {v:1.0,  w:0.290, face:'#e0c273', ring:'#fff3cf', core:'#fff3cf', label:'1',   shape:'chip', bloom:11},
-  {v:2.5,  w:0.180, face:'#eccd78', ring:'#fffbe8', core:'#fffbe8', label:'2.5', shape:'chip', bloom:14},
-  {v:5.0,  w:0.085, face:'#ffd678', ring:'#fffbe8', core:'#fffbe8', label:'5',   shape:'chip', bloom:18},
-  {v:12.0, w:0.037, face:'#ffd678', ring:'#7a5f14', core:'#fffbe8', label:'500', shape:'plaque', bloom:24},
-  {v:25.0, w:0.008, face:'#ffe9a8', ring:'#ffffff', core:'#ffffff', label:'25',  shape:'jackpot', bloom:30},
+  {v:0.5,  w:0.2800, face:'#d9b566', ring:'#fff3cf', core:'#fff3cf', label:'.5',  shape:'chip', bloom:9},
+  {v:1.0,  w:0.3500, face:'#e0c273', ring:'#fff3cf', core:'#fff3cf', label:'1',   shape:'chip', bloom:11},
+  {v:2.5,  w:0.2700, face:'#eccd78', ring:'#fffbe8', core:'#fffbe8', label:'2.5', shape:'chip', bloom:14},
+  {v:5.0,  w:0.0894, face:'#ffd678', ring:'#fffbe8', core:'#fffbe8', label:'5',   shape:'chip', bloom:18},
+  {v:25.0, w:0.0100, face:'#ffd678', ring:'#7a5f14', core:'#fffbe8', label:'25',  shape:'plaque', bloom:24},
+  {v:350.0,w:0.0006, face:'#ffe9a8', ring:'#ffffff', core:'#ffffff', label:'350', shape:'jackpot', bloom:30},
 ];
+// Labels are the chip's face value; a chip pays face × 0.2 × RUN.scale (≈0.05×), so a
+// "5" is worth ~0.26x of the stake, the "25" plaque ~1.3x, and the "350" jackpot ~18x.
 const CHIP_MEAN = wmean(CHIPS,'v');
 
-const MULT_LOW=[{m:2,w:.7},{m:3,w:.3}], MULT_MID=[{m:2,w:.5},{m:3,w:.35},{m:5,w:.15}];
-const MULT_HIGH=[{m:3,w:.5},{m:5,w:.35},{m:10,w:.15}], MULT_MAX=[{m:5,w:.5},{m:10,w:.35},{m:25,w:.15}];
+// Multipliers stack multiplicatively. Two slots, gentle tiers: the jackpot
+// lives in the chip table, not here, so the body of the distribution stays tight.
+const MULT_MID=[{m:2,w:.70},{m:3,w:.27},{m:4,w:.03}];
 const STAFF_SOFT=[{f:.20,w:.45,art:'cleaner',nm:'CLEANER'},{f:.30,w:.35,art:'security',nm:'SECURITY'},{f:.40,w:.20,art:'pitboss',nm:'PIT BOSS'}];
-const STAFF_HARD=[{f:.30,w:.35,art:'security',nm:'SECURITY'},{f:.45,w:.40,art:'pitboss',nm:'PIT BOSS'},{f:.60,w:.25,art:'k9',nm:'K-9 UNIT'}];
 
 // lam = chance the pursuer closes the gap for good on any single leap.
 // Every chip you reach for is another roll against it, so greed is what
 // gets you caught. Bust is tied to an ACTION, never to elapsed time —
-// that is what keeps this clear of the banned crash pattern.
-// mu = the final-approach gauntlet. Staff converge on the door, so the last
-// stretch is its own hazard regardless of how you played the floor. One clean
-// term, so the closed form survives, and every ending is tense.
-const GAUNTLET_X = DOOR_X => DOOR_X - 520;
+// that is what keeps this clear of the banned crash pattern. There is no
+// other hazard: a flat "final approach" tax was removed because losing at the
+// door after doing everything right read as rigged, and it contradicted the
+// point of the game (greed is what catches you).
 // One speed. BERSERK's payoff was invisible at its own pace — pickups and
 // staff resolved faster than a player could track them, which is the
 // opposite of dopamine: excitement needs a legible threat, not a blur.
-// TROT's numbers become the only run.
-const RUN = {nm:'TROT', dur:10000, lam:.022, mu:.07,
-  chips:{n:15,p:.50,s:.20}, mult:{n:3,p:.22,tbl:MULT_MID}, steal:{n:3,p:.15,tbl:STAFF_SOFT}};
+const RUN = {nm:'TROT', dur:10000, lam:.024,
+  chips:{n:15,p:.68,s:.20}, mult:{n:2,p:.11,tbl:MULT_MID}, steal:{n:3,p:.15,tbl:STAFF_SOFT}};
 // Survival is shared across every leap, but the indicators stay independent,
 // so the whole thing still factorises:
 //   chips = n·p·(1−λ)·v̄·(1−pλ)^(n−1)   mults = (1−p+p(1−λ)m̄)^k   staff = (1−s·f̄)^j
@@ -270,12 +387,12 @@ function rawEV(t){
   const chipTerm = nc * pc * sv * (t.chips.s*CHIP_MEAN) * Math.pow(1-pc*t.lam, nc-1);
   const multTerm = Math.pow(1 - t.mult.p + t.mult.p*sv*wmean(t.mult.tbl,'m'), t.mult.n);
   const stealTerm = Math.pow(1 - t.steal.p*wmean(t.steal.tbl,'f'), t.steal.n);
-  return chipTerm * multTerm * stealTerm * (1-t.mu);
+  return chipTerm * multTerm * stealTerm;
 }
 // expected bust rate, for the self-check panel
 function bustRate(t){
   const A = c => 1 - c.p*t.lam;
-  return 1 - Math.pow(A(t.chips), t.chips.n) * Math.pow(A(t.mult), t.mult.n) * (1-t.mu);
+  return 1 - Math.pow(A(t.chips), t.chips.n) * Math.pow(A(t.mult), t.mult.n);
 }
 RUN.scale = RTP/rawEV(RUN);
 let STAKE = 100;
@@ -284,7 +401,7 @@ let STAKE = 100;
 // Outside the iframe connection.promise never resolves (documented SDK
 // behavior) and the game simply stays in local demo mode — this is what
 // keeps "runs standalone outside the iframe" true without a fork in the code.
-const CAP_MULTIPLIER = 300; // must match contract/ChipThiefGame.sol
+const CAP_MULTIPLIER = 100; // must match contract/ChipThiefGame.sol
 function connectGameToHost(methods){
   const allowedOrigins = (() => {
     if (typeof document === 'undefined' || !document.referrer) return ['*'];
@@ -345,15 +462,14 @@ function hexToBytes(hex){ hex = hex.replace(/^0x/,''); const out = new Uint8Arra
 // tier tables. Given the SAME on-chain randomness word this reproduces the
 // contract's payout bit-for-bit (verified against 300k+ live calls during
 // development) — the animation is never a locally-rolled guess.
-const WAD=10n**18n, TWO64=18446744073709551616n, LAM_WAD=22n*10n**15n;
-const CHIP_GOT_T=9223372036854775808n, MULT_GOT_T=4058283696216101355n,
-      STAFF_GOT_T=2767011611056432742n, GAUNTLET_SURV_T=17155471988549883002n;
-const CHIP_CUM=[7378697629483820646n,12728253410859590615n,16048667344127309905n,17616640590392621793n,18299170121119875203n];
-const CHIP_VALUE_WAD=[1n*10n**17n,2n*10n**17n,5n*10n**17n,1n*10n**18n,24n*10n**17n,5n*10n**18n];
-const MULT_CUM=[9223372036854775808n,15679732462653118873n];
+const WAD=10n**18n, TWO64=18446744073709551616n, LAM_WAD=24n*10n**15n;
+const CHIP_GOT_T=12543785970122495098n, MULT_GOT_T=2029141848108050677n, STAFF_GOT_T=2767011611056432742n;
+const CHIP_CUM=[5165088340638674452n,11621448766437017518n,16602069666338596454n,18251208586528230368n,18435676027265325885n];
+const CHIP_VALUE_WAD=[1n*10n**17n,2n*10n**17n,5n*10n**17n,1n*10n**18n,5n*10n**18n,70n*10n**18n];
+const MULT_CUM=[12912720851596686131n,17893341751498265067n];
 const STAFF_CUM=[8301034833169298227n,14757395258967641292n];
 const STAFF_F_WAD=[2n*10n**17n,3n*10n**17n,4n*10n**17n];
-const SCALE_WAD=175617425823751168n; // solved so declared RTP == 96.0%, matches contract SCALE_WAD
+const SCALE_WAD=255745803546881984n; // solved so declared RTP == 96.0%, matches contract SCALE_WAD
 
 function draw64(randomnessBytes, idx){
   const idxBytes = hexToBytes(idx.toString(16).padStart(64,'0'));
@@ -373,7 +489,7 @@ function chainOutcomeFromRandomness(wagerBase, randomnessHex){
     if (got){ const tier=tierFromCum(draw64(randomness, idx++), CHIP_CUM); landed++;
       chipTier.push(tier); chipSumWad += CHIP_VALUE_WAD[tier]; } else chipTier.push(-1);
   }
-  for (let i=0;i<3;i++){
+  for (let i=0;i<2;i++){
     const got = draw64(randomness, idx++) < MULT_GOT_T; multGot.push(got);
     if (got){ const tier=tierFromCum(draw64(randomness, idx++), MULT_CUM); landed++;
       multTier.push(tier); multProdWad *= BigInt(MULT_MID[tier].m); } else multTier.push(-1);
@@ -387,15 +503,14 @@ function chainOutcomeFromRandomness(wagerBase, randomnessHex){
   for (let i=0n;i<landed;i++) survivalWad = survivalWad*(WAD-LAM_WAD)/WAD;
   const survive64 = survivalWad*TWO64/WAD;
   const caughtDuringLeaps = draw64(randomness, idx++) >= survive64;
-  const caughtAtGauntlet = !caughtDuringLeaps && draw64(randomness, idx++) >= GAUNTLET_SURV_T;
 
   let payout = 0n;
-  if (!caughtDuringLeaps && !caughtAtGauntlet){
+  if (!caughtDuringLeaps){
     let m = SCALE_WAD*chipSumWad/WAD; m = m*multProdWad/WAD; m = m*staffProdWad/WAD;
     const cap = wagerBase*BigInt(CAP_MULTIPLIER);
     payout = wagerBase*m/WAD; if (payout>cap) payout = cap;
   }
-  return { payout, rolls:{chipGot,chipTier,multGot,multTier,staffGot,staffTier,caughtDuringLeaps,caughtAtGauntlet} };
+  return { payout, rolls:{chipGot,chipTier,multGot,multTier,staffGot,staffTier,caughtDuringLeaps} };
 }
 
 // ── canvas fits the whole feed; world height is fixed, width follows the aspect ──
@@ -420,7 +535,7 @@ window.addEventListener('resize', fit);
 
 // ── outcome first, staging second ──
 // `rolls`, when given, comes from chainOutcomeFromRandomness(): the got/value
-// decisions and the catch/gauntlet result are then the chain-verified ones,
+// decisions and the caught/escaped result are then the chain-verified ones,
 // not locally rolled. Positions/scenery stay cosmetic-random either way —
 // nothing about where an item is drawn on screen is chain-verified.
 function drawOutcome(t, rolls){
@@ -452,10 +567,23 @@ function drawOutcome(t, rolls){
   if (staff.length) staff[staff.length-1].x = DOOR_X - (620 + Math.random()*260);
   items.sort((a,b)=>a.x-b.x);
 
+  // Keep every item clear of its neighbours. Clustering used to jitter items
+  // ±270px with no minimum, so a coin the goose was NOT going to take could sit
+  // inside (or on top of) the arc of one it was — reading as the goose phasing
+  // through a coin. The widest hop is ~120px either side of its item, so 160px
+  // guarantees each item its own clear slot. Push forward, then pull back from
+  // the door end so the last item never lands past the exit.
+  const MIN_GAP = 160, X_MAX = DOOR_X - 600;
+  for (let i=1;i<items.length;i++)
+    if (items[i].x - items[i-1].x < MIN_GAP) items[i].x = items[i-1].x + MIN_GAP;
+  for (let i=items.length-1;i>=0;i--){
+    const lim = i===items.length-1 ? X_MAX : items[i+1].x - MIN_GAP;
+    if (items[i].x > lim) items[i].x = lim;
+  }
+
   // Every leap is a roll against the pursuer. Rolled here, before any pixel
   // moves, so the animation is only ever replaying a decided outcome.
-  const gauntletX = GAUNTLET_X(DOOR_X);
-  let caughtAt = null, leaps = 0, gauntlet = false;
+  let caughtAt = null, leaps = 0;
   if (rolls){
     const landedItems = items.filter(it => it.kind!=='steal' && it.got);
     leaps = landedItems.length;
@@ -464,15 +592,13 @@ function drawOutcome(t, rolls){
       // already decided on chain) — position it visually at random.
       const victim = landedItems[Math.floor(Math.random()*landedItems.length)];
       caughtAt = victim.x; victim.fatal = true;
-    } else if (rolls.caughtAtGauntlet){ caughtAt = gauntletX; gauntlet = true; }
+    }
   } else {
     for (const it of items){
       if (it.kind === 'steal' || !it.got) continue;
       leaps++;
       if (caughtAt === null && Math.random() < t.lam){ caughtAt = it.x; it.fatal = true; }
     }
-    // the final approach: staff converge on the door whatever you did on the floor
-    if (caughtAt === null && Math.random() < t.mu){ caughtAt = gauntletX; gauntlet = true; }
   }
 
   items.forEach(it => {
@@ -482,14 +608,13 @@ function drawOutcome(t, rolls){
   });
 
   const wps = [{x:START_X-600,y:GOOSE_FLY}];
-  const taken = items.filter(i => i.kind!=='steal' && i.got);
   items.forEach(it => {
     const leap = (it.kind==='steal') ? !it.got : it.got;
     let target, reach;
     // tight arcs: a hop off the floor and straight back down, never a glide
     if (leap){ target = (it.kind==='steal') ? GROUND-140 : it.y; reach = 70 + (GOOSE_FLY-target)*.30; }
     else if (it.kind !== 'steal'){
-      if (taken.some(o => Math.abs(o.x-it.x) < 200)) return;
+      // every miss gets its own reach — a visible coin the goose ignores outright reads as a bug
       target = GOOSE_FLY - (GOOSE_FLY-it.y)*.55; reach = 62 + (GOOSE_FLY-target)*.28;
       it.nearMiss = true;
     } else return;
@@ -507,7 +632,7 @@ function drawOutcome(t, rolls){
 
   const SC = ['chair','glasses','plant','stanchion','dealer','cards','bottles'];
   const scenery = [];
-  for (let x = START_X+420; x < DOOR_X-300; x += 210 + Math.random()*190)
+  for (let x = START_X+820; x < DOOR_X-300; x += 210 + Math.random()*190)   // clear of DECOR (x 480–914)
     scenery.push({type:SC[Math.floor(Math.random()*SC.length)], x, hit:false, rot:0, vr:0, ox:0, oy:0, vx:0, vy:0, flip:Math.random()<.5});
 
   const live = i => caughtAt === null || i.x < caughtAt;
@@ -518,8 +643,8 @@ function drawOutcome(t, rolls){
   // In chain mode `rolls.payoutMultiplier` is the authoritative on-chain
   // payout (set by chainOutcomeFromRandomness's caller) — never recomputed
   // from float chip sums, so the display always matches what was actually paid.
-  return {items, scenery, pathY, caughtAt, gauntlet, gauntletX, leaps,
-          payout: rolls ? rolls.payoutMultiplier : (caughtAt!==null ? 0 : t.scale*cs*mp*sp)};
+  return {items, scenery, pathY, caughtAt, leaps,
+          payout: rolls ? rolls.payoutMultiplier : (caughtAt!==null ? 0 : Math.min(CAP_MULTIPLIER, t.scale*cs*mp*sp))};
 }
 function simulate(t,n){ let s=0; for (let i=0;i<n;i++) s += drawOutcome(t).payout; return s/n; }
 
@@ -687,7 +812,7 @@ function chipFace(x,y,r,c,spin){
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(c.label,0,1*k);
   ctx.restore();
 }
-function plaqueFace(x,y,s){
+function plaqueFace(x,y,s,label){
   ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
   ctx.shadowColor='rgba(255,214,120,.9)'; ctx.shadowBlur=30;
   ctx.fillStyle='#ffd678'; ctx.beginPath(); ctx.rect(-74,-34,148,68); ctx.fill();
@@ -695,7 +820,7 @@ function plaqueFace(x,y,s){
   ctx.strokeStyle='#7a5f14'; ctx.lineWidth=4; ctx.setLineDash([12,8]);
   ctx.strokeRect(-60,-22,120,44); ctx.setLineDash([]);
   ctx.fillStyle='#3a2c0c'; ctx.font=`800 23px ${MONO}`;
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('500',0,2);
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,0,2);
   ctx.restore();
 }
 function reticle(x,y,w,h,label,sub,dashed){
@@ -713,7 +838,11 @@ function reticle(x,y,w,h,label,sub,dashed){
     ctx.beginPath(); ctx.moveTo(L-8,y); ctx.lineTo(R+8,y); ctx.stroke();
   }
   if (label){
-    const bw = Math.max(ctx.measureText(label).width, 150)+16;
+    // measure with the fonts the text is actually drawn in (it used to measure before setting
+    // them, so every label box was sized from a stale font and stretched ~150px minimum)
+    ctx.font=`700 10px ${MONO}`; const w1=ctx.measureText(label).width;
+    ctx.font=`500 10px ${MONO}`; const w2=sub ? ctx.measureText(sub).width : 0;
+    const bw = Math.max(w1,w2)+16;
     ctx.fillStyle='#0d1411'; ctx.strokeStyle='rgba(95,211,154,.35)'; ctx.lineWidth=1;
     ctx.fillRect(L, T-42, bw, 32); ctx.strokeRect(L, T-42, bw, 32);
     ctx.fillStyle=C.sys; ctx.font=`700 10px ${MONO}`; ctx.textAlign='left'; ctx.textBaseline='middle';
@@ -780,6 +909,42 @@ function wreck(sc){
   shake = Math.max(shake, 5);
 }
 
+// Furniture and the direction sign are part of the world in the run too, so they scroll off
+// naturally on release. The goose runs THROUGH this stretch (real items start ~x 1150), so
+// anything collectible-looking placed here would read as chips it ignores — the exact bug
+// fixed earlier. Loose chips and ambient staff are therefore idle-only (drawIdleDressing).
+let reticleLabels = true;   // off for the one frame that a big-win verdict is laid over
+const DECOR = [{prop:'table',x:480,y:440},{prop:'light',x:660,y:316},{prop:'bar',x:820,y:384}];
+const EXIT_SIGN_X = 1030;
+
+function drawExitSign(sx){
+  const g=ctx.createRadialGradient(sx,GROUND+24,0,sx,GROUND+24,230);
+  g.addColorStop(0,'rgba(95,211,154,.16)'); g.addColorStop(1,'rgba(95,211,154,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,GROUND+24,230,0,6.284); ctx.fill();
+  ctx.strokeStyle='rgba(95,211,154,.35)'; ctx.lineWidth=1.5;
+  for (const dx of [-30,30]){ ctx.beginPath(); ctx.moveTo(sx+dx,0); ctx.lineTo(sx+dx,96); ctx.stroke(); }
+  ctx.save(); ctx.shadowColor='rgba(95,211,154,.9)'; ctx.shadowBlur=22;
+  ctx.fillStyle=C.sys; ctx.fillRect(sx-48,96,96,30); ctx.restore();
+  ctx.fillStyle='#04150c'; ctx.font=`800 15px ${MONO}`; ctx.textAlign='left'; ctx.textBaseline='middle';
+  let x=sx-33; for (const ch of 'EXIT'){ ctx.fillText(ch,x,112); x+=ctx.measureText(ch).width+2; }
+  ctx.beginPath(); ctx.moveTo(x+6,105); ctx.lineTo(x+22,112); ctx.lineTo(x+6,119); ctx.closePath(); ctx.fill();
+}
+
+// Idle-only: loose chips on the furniture and two staff patrolling between the goose and the sign.
+function drawIdleDressing(camX){
+  const now=performance.now(), bob=x=>Math.sin(now*.002+x*.01)*3;
+  [[CHIPS[1],462,436],[CHIPS[0],500,444],[CHIPS[3],660,316],[CHIPS[2],786,382]]
+    .forEach(([c,x,y]) => chipFace(x-camX,y+bob(x),24,c,0));
+  plaqueFace(850-camX,378+bob(850),.48,CHIPS[4].label);
+  [{art:'pitboss',x:610,nm:'PIT BOSS',ph:0,w:118},{art:'security',x:960,nm:'SECURITY',ph:.5,w:112}].forEach(s => {
+    const ph=(now/7000+s.ph)*6.2832, sx=s.x+Math.sin(ph)*48-camX, y=GROUND-44, art=STAFF_ART[s.art].braced;
+    ctx.save(); ctx.shadowColor='rgba(95,211,154,.55)'; ctx.shadowBlur=14;
+    drawArt(art.ops,art.vb,sx,y,1,Math.cos(ph)<0);   // face the way they are walking
+    ctx.restore();
+    reticle(sx,y-52,s.w,140,s.nm,'ON SHIFT',true);
+  });
+}
+
 function drawWorld(camX, gy, tilt, run, speedRatio, prog){
   ctx.setTransform(SCALE,0,0,SCALE,0,0);
   ctx.clearRect(0,0,VW,VH);
@@ -807,9 +972,11 @@ function drawWorld(camX, gy, tilt, run, speedRatio, prog){
     ctx.beginPath(); ctx.moveTo(x,GROUND); ctx.lineTo(x,VH); ctx.stroke(); }
   for (let y=GROUND+26;y<VH;y+=26){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); }
 
+  DECOR.forEach(d => { const sx=d.x-camX; if (sx>-250 && sx<VW+250) prop(d.prop,sx,d.y); });
   run.items.forEach(it => { const sx=it.x-camX;
     if (sx>-250 && sx<VW+250 && it.kind!=='steal' && it.prop) prop(it.prop,sx,it.y); });
   (run.scenery||[]).forEach(sc => { const sx=sc.x-camX; if (sx>-220 && sx<VW+220) drawScenery(sc,sx); });
+  { const sx=EXIT_SIGN_X-camX; if (sx>-300 && sx<VW+300) drawExitSign(sx); }
 
   // fire exit
   const dx=DOOR_X-camX;
@@ -837,7 +1004,7 @@ function drawWorld(camX, gy, tilt, run, speedRatio, prog){
     const sx=it.x-camX; if (sx<-160||sx>VW+160) return;
     const bob=Math.sin(performance.now()*.002+it.x*.01)*3;
     if (it.kind==='chip'){
-      if (it.chip.shape==='plaque') plaqueFace(sx,it.y+bob,.48);
+      if (it.chip.shape==='plaque') plaqueFace(sx,it.y+bob,.48,it.chip.label);
       else chipFace(sx,it.y+bob,it.chip.shape==='jackpot'?30:24,it.chip,
         it.chip.shape==='jackpot'?performance.now()*.0007:0);
     } else if (it.kind==='mult'){
@@ -862,7 +1029,9 @@ function drawWorld(camX, gy, tilt, run, speedRatio, prog){
     }
   });
 
-  // edge-of-frame markers for threats still off camera, and the final approach
+  if (run===idleRun) drawIdleDressing(camX);
+
+  // edge-of-frame markers for threats still off camera
   const gxNow2 = camX + GOOSE_X;
   run.items.forEach(it => {
     if (it.taken || it.kind!=='steal') return;
@@ -876,14 +1045,6 @@ function drawWorld(camX, gy, tilt, run, speedRatio, prog){
     ctx.fillRect(VW-10, GROUND-158, 4, 16);
     ctx.restore();
   });
-  if (run.running && run.gauntletX - gxNow2 < 1600 && run.gauntletX - gxNow2 > -200){
-    const p = Math.max(0,Math.min(1,1-(run.gauntletX-gxNow2)/1600));
-    ctx.save();
-    ctx.globalAlpha = .25 + p*.75*(0.6+0.4*Math.abs(Math.sin(performance.now()*.006)));
-    ctx.fillStyle = C.alert; ctx.font=`700 12px ${MONO}`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('FINAL APPROACH · STAFF CONVERGING', VW/2, 58);
-    ctx.restore();
-  }
 
   rings.forEach(r => { ctx.strokeStyle=r.c; ctx.globalAlpha=Math.max(0,r.life)*.5;
     ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x-camX,r.y,r.r,0,6.284); ctx.stroke(); ctx.globalAlpha=1; });
@@ -936,16 +1097,20 @@ function drawWorld(camX, gy, tilt, run, speedRatio, prog){
   // tracking lock on the subject
   const spd = run.running ? (7.2*(0.6+speedRatio)).toFixed(1) : '0.0';
   const left = Math.max(0, Math.round((DOOR_X-(camX+GOOSE_X))/10));
-  reticle(GOOSE_X, gy-bounce-4, 118, 116,
-    'SUBJECT · '+left+'m TO EXIT',
+  if (run===idleRun) reticle(GOOSE_X, gy-bounce-4, 176, 148, 'SUBJECT · ANSER-1', 'CONTAINED', false);
+  else reticle(GOOSE_X, gy-bounce-4, 118, 116,
+    reticleLabels ? 'SUBJECT · '+left+'m TO EXIT' : null,
     run.running ? 'TRACKING · '+spd+' m/s' : (gooseWon>0?'TRACK LOST':'STATIONARY · 0.0 m/s'),
     gooseWon>0);
 }
 
 // ── audio ──
 let actx, amb=null, ambG=null;
+let muted=false; try { muted = localStorage.getItem('ct-muted')==='1'; } catch {}
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function audio(){ return actx || (actx = new (window.AudioContext||window.webkitAudioContext)()); }
 function tone(f,d,ty='sine',g=.14,when=0,fe=null){
+  if (muted) return;
   const c=audio(), t0=c.currentTime+when, o=c.createOscillator(), gn=c.createGain();
   o.type=ty; o.frequency.setValueAtTime(f,t0);
   if (fe) o.frequency.exponentialRampToValueAtTime(fe,t0+d);
@@ -954,6 +1119,7 @@ function tone(f,d,ty='sine',g=.14,when=0,fe=null){
   o.connect(gn).connect(c.destination); o.start(t0); o.stop(t0+d+.02);
 }
 function noise(d=.1,g=.2,when=0,lp=null){
+  if (muted) return;
   const c=audio(), t0=c.currentTime+when, n=Math.floor(c.sampleRate*d);
   const b=c.createBuffer(1,n,c.sampleRate), da=b.getChannelData(0);
   for (let i=0;i<n;i++) da[i]=(Math.random()*2-1)*(1-i/n);
@@ -965,6 +1131,7 @@ function noise(d=.1,g=.2,when=0,lp=null){
 }
 // tape hiss floor: never silent, never clean
 function hissStart(){
+  if (muted) return;
   const c=audio();
   if (!amb){
     const len=c.sampleRate*2, b=c.createBuffer(1,len,c.sampleRate), d=b.getChannelData(0);
@@ -1063,7 +1230,7 @@ function stepFx(){
   rings.forEach(r=>{ r.r+=(r.max-r.r)*.14; r.life-=.04; });
   rings=rings.filter(r=>r.life>0);
   if (doorBurst>0) doorOpen += (1-doorOpen)*.22;
-  if (flashFrames>0){ flashFrames--; glitch.style.opacity = flashFrames>0 ? '1' : '0'; }
+  if (flashFrames>0){ flashFrames--; glitch.style.opacity = (!REDUCED && flashFrames>0) ? '1' : '0'; }
 }
 function stepProps(list){
   (list||[]).forEach(sc=>{ if(!sc.hit) return;
@@ -1075,14 +1242,15 @@ const idleRun={items:[],scenery:[],bag:0,running:false};
 let lastFrame=performance.now();
 function idleFrame(){
   const now=performance.now();
-  tc += (now-lastFrame)/1000; lastFrame=now;
-  $('clock').textContent=fmtTC(tc);
-  if (!busy){
+  if (!clockHold){ tc += (now-lastFrame)/1000; $('clock').textContent=fmtTC(tc); }
+  lastFrame=now;
+  if (!busy && !heldFrame){
     const t=now*.004, cyc=(now%3400)/3400;
     const peck = cyc>.84 ? Math.sin((cyc-.84)/.16*Math.PI) : 0;
     gooseAir=false; gooseSquash=peck*.38; gooseFull=false;
     stepFx();
-    drawWorld(DOOR_X-GOOSE_X-1400, GOOSE_FLY+Math.sin(t)*3+peck*10, Math.sin(t)*.04+peck*.22, idleRun, 0, 0);
+    // camera sits exactly where a run starts, so the idle room IS the start of the run
+    drawWorld(START_X-GOOSE_X, GOOSE_FLY+Math.sin(t)*3+peck*10, Math.sin(t)*.04+peck*.22, idleRun, 0, 0);
   }
   requestAnimationFrame(idleFrame);
 }
@@ -1111,6 +1279,8 @@ async function openChainSession(t){
 async function launch(){
   if (busy) return;
   if (hostApi ? !canBetOnChain() : balance<STAKE) return;
+  dismissNotes(false); $('hint').hidden = true;    // the hint is for the first release only
+  clearBigWin();                                   // a held big-win frame stays up until the next release
   busy=true; renderCtrls(); verdict.style.opacity=0;
   particles=[]; rings=[]; doorOpen=0; doorBurst=0; chain=0;
   gooseSquash=0; gooseAir=false; gooseHurt=0; gooseWon=0; gooseFull=false;
@@ -1134,6 +1304,7 @@ async function launch(){
   const speedRatio = 1-(t.dur-5200)/(13000-5200);
   pursuit=300; pursuitArt=pick(t.steal.tbl).art;
   let prevY=GOOSE_FLY, wasAir=false, stepAt=0, vEl=0, lastT=performance.now(), rate=1;
+  let pull=0;   // pending inward pull on the guard, one dose per real pickup
   let staffSeen=0;
   const staffTotal=t.steal.n;
   hissStart(); sfxDispatch();
@@ -1145,6 +1316,10 @@ async function launch(){
   const sp=()=>run.items.filter(i=>i.kind==='steal'&&i.taken).reduce((a,b)=>a*(1-b.f),1);
 
   (function frame(){
+    if (lift){                                    // jackpot-chip lift: world and clock frozen
+      if (!renderLift(performance.now())){ requestAnimationFrame(frame); return; }
+      endLift(); lastT=performance.now();
+    }
     const now=performance.now(), dt=Math.min(50,now-lastT); lastT=now;
     tc += dt/1000; $('clock').textContent=fmtTC(tc);
 
@@ -1171,11 +1346,17 @@ async function launch(){
     wasAir=airborne; gooseAir=airborne; gooseSquash*=.82;
     if (gooseHurt>0) gooseHurt-=.045;
 
-    // the gap is driven by leaps taken, so the picture agrees with the odds
-    pursuit += (airborne ? -3.4 : 1.4)*(dt/16);
+    // The gap is driven ONLY by pickups — the leaps that actually carry a catch
+    // roll — so the picture agrees with the odds and never hovers. Near-miss and
+    // evade hops used to count too, which pinned the guard on your heels every
+    // run whether or not you were in danger. It drifts back when you run level.
+    const step = Math.min(pull, 2.4*(dt/16));
+    pull -= step;
+    pursuit += -step + .2*(dt/16);
     if (run.caughtAt !== null){
+      // a short lunge at the very end, not a long scripted approach that telegraphs it
       const d = run.caughtAt - gx;
-      if (d < 900) pursuit = Math.min(pursuit, Math.max(0, d/900*300));
+      if (d < 420) pursuit = Math.min(pursuit, Math.max(0, d/420*300));
     }
     pursuit = Math.max(run.caughtAt!==null ? 0 : 96, Math.min(330, pursuit));
 
@@ -1188,9 +1369,7 @@ async function launch(){
       setTimeout(()=>{ flashFrames = 4; }, 200);
       setTimeout(()=>feedEl.classList.remove('shaking'), 700);
       $('lock').textContent = 'DETAINED';
-      logLine(run.gauntlet
-        ? `<b class="bad">DETAINED ON FINAL APPROACH</b> · ${Math.round((DOOR_X-gx)/10)}m short`
-        : `<b class="bad">SUBJECT DETAINED</b> at ${Math.round((DOOR_X-gx)/10)}m`);
+      logLine(`<b class="bad">SUBJECT DETAINED</b> at ${Math.round((DOOR_X-gx)/10)}m`);
       let hold = 0;
       (function capture(){
         hold++; pursuit = Math.max(0, pursuit-6); stepFx();
@@ -1211,13 +1390,16 @@ async function launch(){
       }
       if (!it.taken && it.got && gx>=it.x){
         it.taken=true;
+        if (it.kind!=='steal') pull += 20;
         if (it.kind==='chip'){
           gooseFull=true;
           const credits = Math.max(1, Math.round(it.value*t.scale*STAKE));
           if (it.chip.shape==='plaque'){ sfxBloom(); ring(it.x,it.y,'rgba(255,214,120,.6)',130);
             logLine(`plaque removed <b>+${credits}</b>`); }
           else if (it.chip.shape==='jackpot'){ sfxBloom(); ring(it.x,it.y,'rgba(255,255,255,.7)',170);
-            flashFrames=2; logLine(`jackpot chip lifted <b>+${credits}</b>`); }
+            flashFrames=2; logLine(`jackpot chip lifted <b>+${credits}</b>`);
+            // the payout is already decided: only hold on it when the run is going to pay >= 10x
+            if (o.payout>=10 && run.caughtAt===null) liftPending=it; }
           else { sfxChip(); logLine(`rack ${it.chip.label} emptied <b>+${credits}</b>`); }
           burst(it.x,it.y,'rgba(255,214,120,.75)',10,5);
         }
@@ -1251,11 +1433,19 @@ async function launch(){
     stepFx();
     $('statusLine').textContent = `INCIDENT ACTIVE · ${Math.max(0,Math.round((DOOR_X-gx)/10))}m TO FIRE EXIT`;
     drawWorld(camX, gy, tilt, run, speedRatio, prog);
+    if (liftPending){ startLift(liftPending, camX); liftPending=null; }
 
     if (prog<1) requestAnimationFrame(frame);
     else {
       run.running=false; gooseWon=1; doorBurst=1; doorOpen=.01; sfxDoor();
       $('lock').textContent='LOST';
+      if (o.payout>=5){
+        // BIG / JACKPOT: hold the very frame the goose crosses the line, no door outro
+        heldGy=run.pathY(DOOR_X); doorOpen=.6; stepFx();
+        reticleLabels=false; drawWorld(DOOR_X-GOOSE_X, heldGy, 0, run, speedRatio, 1); reticleLabels=true;
+        settle(o.payout, false, o.sessionId);
+        return;
+      }
       (function outro(){
         doorOpen += (1-doorOpen)*.2; stepFx();
         drawWorld(DOOR_X-GOOSE_X, run.pathY(DOOR_X), 0, run, speedRatio, 1);
@@ -1263,6 +1453,114 @@ async function launch(){
       })();
     }
   })();
+}
+
+// ── big-win moment (spec: Asset kit §02) ──
+// BIG (>=5x) and JACKPOT (>=10x) tiers sit on top of the normal win. Everything hard-cuts in
+// (opacity 0 -> 1, no easing, no count-up) so the system reads as a machine filing a report.
+// The outcome is long decided by now — this only stages it; nothing here touches the maths.
+let clockHold=false, heldFrame=false, heldGy=GOOSE_FLY, lift=null, liftPending=null;
+const holdCv=document.createElement('canvas'), holdCtx=holdCv.getContext('2d');
+const incNo=()=>String(412+rounds).padStart(4,'0');   // rounds is already counted when a verdict is staged
+const later=(ms,fn)=>setTimeout(fn,ms);
+const HOLD_BARS='<span class="pbars"><i></i><i></i><i></i></span>HOLD';
+
+function snapshotFrame(){ holdCv.width=cv.width; holdCv.height=cv.height; holdCtx.drawImage(cv,0,0); }
+function enterHold(jp){
+  clockHold=true; feedEl.classList.add('hold'); if (jp) feedEl.classList.add('jp');
+  $('fpsTxt').innerHTML=HOLD_BARS;
+  $('statusLine').textContent='FRAME HOLD · INCIDENT '+incNo();
+  if (!REDUCED){ glitch.style.opacity='1'; later(80,()=>{ glitch.style.opacity='0'; }); }
+}
+function exitHold(){ clockHold=false; feedEl.classList.remove('hold','jp'); $('fpsTxt').textContent='SAT · 25 FPS'; }
+
+function clearBigWin(){
+  heldFrame=false; exitHold(); lift=null; liftPending=null; ctx.imageSmoothingEnabled=true;
+  verdict.classList.remove('bwv'); delete verdict.dataset.tier;
+  ['vClass','vStamp','vLine','vBig','vRedact'].forEach(id=>$(id).classList.remove('show'));
+  $('vClass').textContent=''; $('vBig').innerHTML=''; $('vRedact').innerHTML='';
+  $('bw').hidden=true; $('bwBand').classList.remove('show'); $('bwAlarm').hidden=true;
+  $('bwTop').textContent=''; $('bwTop').classList.remove('red'); $('bwEnh').hidden=true; $('bwSvg').innerHTML='';
+  $('lift').hidden=true;
+  $('beak').textContent='0.00x'; $('mult').textContent='×1'; $('staffHud').textContent='0 / '+RUN.steal.n;
+  $('lock').textContent='ANSER-1'; $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
+  pursuit=300; shake=0; particles=[]; rings=[]; gooseWon=0; gooseFull=false; gooseHurt=0;
+}
+
+// CSI-style crop of the held frame around the goose, with a dashed target box and leader.
+function showEnhance(){
+  const gy=heldGy-20, ectx=$('enh').getContext('2d');
+  ectx.imageSmoothingEnabled=false;
+  ectx.drawImage(holdCv,(GOOSE_X-120)*SCALE,(gy-67.5)*SCALE,240*SCALE,135*SCALE,0,0,165,93);
+  $('enhCap').textContent='ENHANCE ×2.3 · FRAME '+incNo();
+  $('bwEnh').hidden=false;
+  const k=feedEl.clientHeight/620, W=feedEl.clientWidth, cx=GOOSE_X*k, cy=gy*k, bw=120*k, bh=100*k;
+  $('bwSvg').innerHTML=
+    `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" fill="none" stroke="rgba(207,229,214,.6)" stroke-dasharray="4 3"/>`+
+    `<line x1="${cx+bw/2}" y1="${cy-bh/2}" x2="${W-18-300}" y2="${78+169}" stroke="rgba(207,229,214,.6)" stroke-dasharray="4 3"/>`;
+}
+
+function presentBigWin(tier, payout, net, chainMode, sessionId){
+  const jp = tier==='jackpot', show=id=>$(id).classList.add('show');
+  snapshotFrame(); heldFrame=true;
+  enterHold(jp);
+  verdict.dataset.tier=tier; verdict.dataset.result='win'; verdict.classList.add('bwv');
+  $('vClass').textContent = jp ? 'INCIDENT CLASS A · CRITICAL LOSS' : 'INCIDENT CLASS B · MAJOR LOSS';
+  $('vStamp').textContent='CONTAINMENT FAILED';
+  $('vLine').innerHTML='SUBJECT LEFT THE<br>BUILDING';
+  $('vBig').innerHTML=`<span class="rl">ASSET RECOVERY:</span><span class="fig">${payout.toFixed(2)}x</span><span class="net">NET +${net.toLocaleString()}</span>`;
+  $('vRedact').innerHTML = jp
+    ? '<div><span>NOTIFY</span><i style="width:44px"></i><i style="width:80px"></i></div><div><span>ESCALATED TO</span><i style="width:112px"></i></div>'
+    : '<div><span>FILED BY</span><i style="width:96px"></i><span>· SHIFT 3</span></div>';
+  verdict.style.opacity=1;
+  $('bw').hidden=false;
+  if (jp){
+    $('bwAlarm').hidden=false; $('bwTop').textContent='ALARM · SEVERITY 1'; $('bwTop').classList.add('red');
+    if (!REDUCED){ later(200,()=>{ $('bwAlarm').hidden=true; }); later(400,()=>{ $('bwAlarm').hidden=false; }); }
+  }
+  later(80,()=>$('bwBand').classList.add('show'));
+  later(160,()=>show('vClass')); later(280,()=>show('vStamp')); later(400,()=>show('vLine'));
+  later(560,()=>{ show('vBig'); logLine(`subject at exit · recovery <b>${payout.toFixed(2)}x</b>`); refreshHud(chainMode); });
+  if (jp){ later(720,showEnhance); later(900,()=>show('vRedact')); } else later(800,()=>show('vRedact'));
+  later(1500,()=>{
+    busy=false; renderCtrls();
+    if (chainMode) hostApi.revealOutcome({ sessionId }).catch(() => {});   // presentation is done
+  });
+}
+
+// Jackpot-chip lift: only ever plays when the pre-drawn payout is already >= 10x (never a tease).
+function startLift(it, camX){
+  snapshotFrame();
+  lift={t0:performance.now(), cx:(it.x-camX)*SCALE, cy:it.y*SCALE, label:it.chip.label, flagged:false, off:false};
+  clockHold=true; feedEl.classList.add('hold'); $('fpsTxt').innerHTML=HOLD_BARS;
+}
+function renderLift(now){
+  const e=now-lift.t0;
+  const z = e<40 ? 1.2 : e<80 ? 1.4 : e<480 ? 1.6 : e<520 ? 1.3 : 1;      // hard digital-zoom steps
+  let sx=0, sy=0, sw=cv.width, sh=cv.height;
+  if (z>1){ sw=cv.width/z; sh=cv.height/z;
+    sx=Math.min(Math.max(lift.cx-sw/2,0),cv.width-sw); sy=Math.min(Math.max(lift.cy-sh/2,0),cv.height-sh); }
+  ctx.setTransform(1,0,0,1,0,0); ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,cv.width,cv.height); ctx.drawImage(holdCv,sx,sy,sw,sh,0,0,cv.width,cv.height);
+  const on = e>=120 && e<480;
+  $('lift').hidden=!on;
+  if (on){
+    const ret=$('liftRet');
+    ret.style.left=(((lift.cx-sx)/sw)*feedEl.clientWidth)+'px'; ret.style.top=(((lift.cy-sy)/sh)*feedEl.clientHeight)+'px';
+    if (!lift.flagged){ lift.flagged=true;
+      $('liftLbl').textContent=`ASSET ${lift.label} · HIGH VALUE\nACQUIRED BY SUBJECT`;
+      $('liftTop').textContent='DIGITAL ZOOM ×1.6 · FRAME HOLD'; $('statusLine').textContent=`ASSET FLAGGED · ${lift.label}`; }
+  }
+  return e>=600;
+}
+function endLift(){ lift=null; ctx.imageSmoothingEnabled=true; $('lift').hidden=true; exitHold(); }
+
+function refreshHud(chainMode){
+  if (!chainMode) $('balance').textContent = Math.round(balance).toLocaleString();
+  $('recovered').textContent = Math.round(recovered).toLocaleString();
+  const sr=$('sessionRtp'); if (sr) sr.textContent = `${rounds} runs · ${(100*paid/wagered).toFixed(1)}%`;
+  const tapeLeft = Math.max(0, 252 - rounds*7);
+  $('tape').textContent = `${String(Math.floor(tapeLeft/60)).padStart(2,'0')}:${String(tapeLeft%60).padStart(2,'0')} LEFT`;
 }
 
 function settle(payout, caught, sessionId){
@@ -1275,20 +1573,22 @@ function settle(payout, caught, sessionId){
   if (won>best) best=won;
   recovered += Math.max(0,won);
 
-  $('vStamp').textContent = caught ? 'SUBJECT DETAINED' : 'CONTAINMENT FAILED';
-  $('vLine').innerHTML = caught ? 'ALL ASSETS<br>RECOVERED' : 'SUBJECT LEFT THE<br>BUILDING';
+  // Escaping is not the same as winning: a run that gets out but pays under
+  // 1x still costs the player money, and the screen has to say so plainly.
+  const net = Math.round(won - STAKE);
+  if (!caught && payout>=5){ presentBigWin(payout>=10 ? 'jackpot' : 'big', payout, net, chainMode, sessionId); return; }
+  const result = caught ? 'caught' : (won >= STAKE ? 'win' : 'partial');
+  verdict.dataset.result = result;
+  $('vStamp').textContent = {caught:'SUBJECT DETAINED', win:'CONTAINMENT FAILED', partial:'PARTIAL RECOVERY'}[result];
+  $('vLine').innerHTML = {caught:'ALL ASSETS<br>RECOVERED', win:'SUBJECT LEFT THE<br>BUILDING', partial:'SUBJECT LEFT WITH<br>PART OF THE HAUL'}[result];
   $('vNote').innerHTML = caught
     ? `ASSET RECOVERY: 0.00x<br>HOUSE RETAINS ${STAKE.toLocaleString()}`
-    : `ASSET RECOVERY: ${payout.toFixed(2)}x<br>${won>=STAKE?'LOSS':'NET'} ${Math.abs(Math.round(won-STAKE)).toLocaleString()}`;
+    : `ASSET RECOVERY: ${payout.toFixed(2)}x<br>${net>=0?'NET +':'LOSS '}${Math.abs(net).toLocaleString()}`;
   verdict.style.opacity=1;
-  if (!caught) logLine(`subject at exit · recovery <b>${payout.toFixed(2)}x</b>`);
+  if (!caught) logLine(`subject at exit · recovery <b${payout<1?' class="bad"':''}>${payout.toFixed(2)}x</b>`);
 
-  if (!chainMode) $('balance').textContent = Math.round(balance).toLocaleString();
-  $('recovered').textContent = Math.round(recovered).toLocaleString();
+  refreshHud(chainMode);
   $('statusLine').textContent = caught ? 'SUBJECT DETAINED · INCIDENT CLOSED' : 'TRACK LOST · SUBJECT AT EXIT';
-  const sr=$('sessionRtp'); if (sr) sr.textContent = `${rounds} runs · ${(100*paid/wagered).toFixed(1)}%`;
-  const tapeLeft = Math.max(0, 252 - rounds*7);
-  $('tape').textContent = `${String(Math.floor(tapeLeft/60)).padStart(2,'0')}:${String(tapeLeft%60).padStart(2,'0')} LEFT`;
 
   // Presentation is done — tell the host it can stop clamping its balance
   // display. Required even on a loss (harmless no-op there per the SDK docs).
@@ -1306,16 +1606,106 @@ function settle(payout, caught, sessionId){
   }, 1700);
 }
 
-window.addEventListener('load', ()=>{
-  fit(); renderCtrls(); syncStake(); idleFrame();
-  $('staffHud').textContent='0 / '+RUN.steal.n;
-  logLine('system armed · cam 04 online');
-  const n=200000;
-  let s=0, caught=0;
-  for (let i=0;i<n;i++){ const o=drawOutcome(RUN); s+=o.payout; if (o.caughtAt!==null) caught++; }
+// Start immediately. This is a module script, so the DOM is already parsed; waiting for
+// `load` gated the whole game on every third-party request (fonts, the jam widget) —
+// measured at 23s to a clickable button when those were slow or blocked.
+fit(); renderCtrls(); syncStake(); idleFrame();
+$('staffHud').textContent='0 / '+RUN.steal.n;
+logLine('system armed · cam 04 online');
+
+function setMuted(m){
+  muted = m; try { localStorage.setItem('ct-muted', m?'1':'0'); } catch {}
+  const b=$('snd'); b.textContent = m ? 'SOUND OFF' : 'SOUND ON'; b.setAttribute('aria-pressed', String(!m));
+  if (ambG) ambG.gain.setTargetAtTime(m ? 0 : .022, actx.currentTime, .1);
+}
+setMuted(muted);
+$('snd').onclick = () => setMuted(!muted);
+
+// ── first-run operator notes: three in-world callouts, shown once ──
+const BRIEFED='chipthief.briefed';
+let notesUp=false;
+$('hintTxt').textContent = matchMedia('(pointer:coarse)').matches ? 'TAP RELEASE' : 'SPACE TO RELEASE';
+
+function revealNotes(k){
+  document.querySelectorAll('#notes [data-n]').forEach(el => { el.style.visibility = (+el.dataset.n<=k) ? 'visible' : 'hidden'; });
+}
+// Leaders point at the real HUD elements (measured), so they stay attached at any feed size.
+function layoutNotes(){
+  const fr=feedEl.getBoundingClientRect(), k=fr.height/620;
+  const rel=el=>{ const r=el.getBoundingClientRect(); return {l:r.left-fr.left,t:r.top-fr.top,r:r.right-fr.left,b:r.bottom-fr.top}; };
+  const notes=[...document.querySelectorAll('.onote')].map(rel);
+  const grow=r=>({l:r.l-6,t:r.t-3,r:r.r+6,b:r.b+3});
+  const beak=grow(rel($('beak').parentElement)), stake=grow(rel($('stakeHud').parentElement)), mult=rel($('mult').parentElement);
+  const hudRight=Math.max(beak.r,stake.r,mult.r);
+  const pitX=610*k-(START_X-GOOSE_X)*k+0, pitY=404*k;
+  const path=(n,d)=>`<path data-n="${n}" d="${d}" fill="none" stroke="#5fd39a" stroke-width="1" stroke-dasharray="4 3"/>`;
+  const brk=(n,r,a=10)=>`<path data-n="${n}" d="M${r.l+a} ${r.t}H${r.l}V${r.t+a}M${r.r-a} ${r.t}H${r.r}V${r.t+a}M${r.l+a} ${r.b}H${r.l}V${r.b-a}M${r.r-a} ${r.b}H${r.r}V${r.b-a}" fill="none" stroke="#5fd39a" stroke-width="2"/>`;
+  const via1=hudRight+30, via2=(GOOSE_X+88+16)*k;      // note 2's vertical clears the goose's reticle
+  const clampX=(n,x)=>Math.min(Math.max(x,notes[n].l+16),notes[n].r-16);
+  $('leaders').innerHTML =
+    path(1,`M${clampX(0,via1)} ${notes[0].b}V${(stake.t+stake.b)/2}H${stake.r}`)+brk(1,stake)+
+    path(2,`M${clampX(1,via2)} ${notes[1].b}V${(beak.t+beak.b)/2}H${beak.r}`)+brk(2,beak)+
+    path(3,`M${notes[2].l+30} ${notes[2].b}V${pitY}H${pitX+64*k}`);
+}
+function showNotes(){
+  let seen=false; try { seen=!!localStorage.getItem(BRIEFED); } catch {}
+  if (seen) return;
+  notesUp=true; feedEl.classList.add('notes-up'); $('notes').hidden=false;
+  $('statusLine').textContent='OPERATOR NOTES · 3';
+  layoutNotes();
+  revealNotes(1); setTimeout(()=>revealNotes(2),120); setTimeout(()=>revealNotes(3),240);   // hard cuts, not fades
+}
+function dismissNotes(thenRelease){
+  if (!notesUp) return;
+  notesUp=false; feedEl.classList.remove('notes-up'); $('notes').hidden=true;
+  try { localStorage.setItem(BRIEFED,'1'); } catch {}
+  if (!busy) $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
+  if (thenRelease) launch();
+}
+$('ack').onclick = () => dismissNotes(false);
+addEventListener('resize', () => { if (notesUp) layoutNotes(); });
+document.fonts?.ready.then(() => { if (notesUp) layoutNotes(); });
+showNotes();
+
+// Keyboard: more bets per minute for people who play with one hand on the space bar.
+addEventListener('keydown', e => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key, t = e.target;
+  if (notesUp){
+    if (k === ' '){ e.preventDefault(); dismissNotes(true); }
+    else if (k === 'Enter' || k === 'Escape'){ e.preventDefault(); dismissNotes(false); }
+    return;
+  }
+  const onOtherControl = t.closest && t.closest('button,summary,a,input') && t.id !== 'go';
+  if ((k === ' ' || k === 'Enter') && !onOtherControl){ e.preventDefault(); launch(); }
+  else if (k === 'ArrowUp' || k === '+' || k === '='){ e.preventDefault(); $('stakeUp').click(); }
+  else if (k === 'ArrowDown' || k === '-' || k === '_'){ e.preventDefault(); $('stakeDn').click(); }
+  else if (k === 'm' || k === 'M'){ setMuted(!muted); }
+});
+
+// The 200k-run self-check used to run inline and froze the page for ~1.6s at startup.
+// It now runs in small slices after first paint, and the panel shows its progress.
+function runSelfCheck(){
+  const n=200000, SLICE=1500;
+  let done=0, s=0, caught=0; const esc=[];
+  (function slice(){
+    for (const stop=Math.min(n,done+SLICE); done<stop; done++){
+      const o=drawOutcome(RUN); s+=o.payout; if (o.caughtAt!==null) caught++; else esc.push(o.payout);
+    }
+    if (done<n){ $('dbg').textContent=`running… ${Math.round(100*done/n)}%`; setTimeout(slice,0); return; }
+    renderSelfCheck(n,s,caught,esc);
+  })();
+}
+requestAnimationFrame(()=>setTimeout(runSelfCheck,250));
+
+function renderSelfCheck(n,s,caught,esc){
+  esc.sort((a,b)=>a-b);
+  const medianEsc = esc[Math.floor(esc.length/2)];
+  const escProfit = esc.filter(x=>x>=1).length/esc.length;
   const row = `<tr><td>${RUN.nm}</td><td>form ${(rawEV(RUN)*RUN.scale*100).toFixed(2)}%</td>
     <td class="ok">sim ${(s/n*100).toFixed(2)}%</td>
-    <td>bust ${(bustRate(RUN)*100).toFixed(1)}% / ${(caught/n*100).toFixed(1)}%</td></tr>`;
+    <td>bust ${(bustRate(RUN)*100).toFixed(1)}% / ${(caught/n*100).toFixed(1)}%</td></tr>
+    <tr><td colspan="4">median escape ${medianEsc.toFixed(2)}x · ${(escProfit*100).toFixed(0)}% of escapes pay 1x or more</td></tr>`;
   $('dbg').innerHTML =
     `Declared RTP <b>${(RTP*100).toFixed(1)}%</b>, bust included. One fixed run — TROT — so the same
      shape is what every player feels, and there is nothing left to declare per-speed.<br>
@@ -1331,7 +1721,7 @@ window.addEventListener('load', ()=>{
      thousands, which is why this is not on the HUD.<br><br>
      <b>Staging, not maths:</b> near-miss reach, clustering, slow-mo, and the last staff member placed near
      the exit. Every roll happens before a pixel moves.`;
-});
+}
 </script>
 </body>
 </html>
