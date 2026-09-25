@@ -1,0 +1,7 @@
+{
+  "cleanUrls": false,
+  "redirects": [{ "source": "/", "destination": "/chip-thief.html", "permanent": false }],
+  "headers": [
+    { "source": "/game.manifest.json", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] }
+  ]
+}

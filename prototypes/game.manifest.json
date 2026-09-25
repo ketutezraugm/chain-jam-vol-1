@@ -9,6 +9,10 @@
       "description": "CCTV footage of a goose robbing a casino floor and running for the fire exit. One button, one scripted run, settled by on-chain randomness."
     }
   },
+  "assets": {
+    "iconUrl": "https://chip-thief.vercel.app/assets/icon-512.webp",
+    "coverUrl": "https://chip-thief.vercel.app/assets/cover-1600x900.webp"
+  },
   "presentation": {
     "mode": "full-iframe",
     "hostPanels": {
