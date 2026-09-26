@@ -9,7 +9,7 @@ scripted run, no decisions mid-run.
 ```
 prototypes/chip-thief.html        the game — single HTML file, no build step
 prototypes/game.manifest.json     Chain casino SDK manifest
-prototypes/vendor/                vendored penpal, keccak256 and JetBrains Mono (SIL OFL), same-origin —
+prototypes/vendor/                vendored penpal, keccak256 and self-hosted Archivo, Bodoni Moda, JetBrains Mono (SIL OFL) —
                                   no third-party request can delay first paint
 prototypes/assets/                store images (icon, cover, social share) and favicon
 contract/ChipThiefGame.sol        on-chain game contract (ICasinoGameV2)
@@ -39,7 +39,7 @@ back the stake or more, with a real top end: **about 1 run in 90 reaches 5×, 1 
 reaches 10×, and 1 in 930 reaches 20×** (the jackpot chip is worth ~18× on its own).
 Closed-form, and verified two ways:
 
-- A Monte Carlo self-check panel in the page itself (200k rounds on load: simulated RTP
+- A Monte Carlo self-check in the page itself (Info → Maths and fairness; 200k rounds on load: simulated RTP
   next to the declared one, plus median escape).
 - The on-chain contract, independently: 100,000 live `onRandomness` calls against the
   deployed contract matched the page's own outcome code bit-for-bit (0 mismatches) and

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chip Thief — CAM 04</title>
+<title>Chip Thief</title>
 <meta name="description" content="A goose robs a casino floor and runs for the fire exit. One button, one scripted run, settled by on-chain randomness. A Chain Jam Vol. 1 entry.">
-<meta name="theme-color" content="#080b09">
+<meta name="theme-color" content="#17110e">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Chip Thief — CAM 04">
+<meta property="og:title" content="Chip Thief">
 <meta property="og:description" content="CCTV footage of a goose robbing a casino floor. One button, one scripted run, settled by on-chain randomness.">
 <meta property="og:image" content="https://chip-thief.vercel.app/assets/social-1200x630.jpg">
 <meta property="og:url" content="https://chip-thief.vercel.app/chip-thief.html">
@@ -16,42 +16,56 @@
 <!-- Chain Jam Vol. 1 entry widget (required): proves the entry, tracks plays
      on the standalone page only (it no-ops inside the chain.wtf iframe). -->
 <script async src="https://jam.chain.wtf/widget.js"></script>
-<link rel="preload" href="./vendor/fonts/jetbrains-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./vendor/fonts/archivo-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./vendor/fonts/bodoni-moda-latin-700.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   /* Self-hosted (SIL OFL, see vendor/fonts/OFL.txt): no third-party request can delay the first paint. */
+  @font-face{font-family:'Archivo';font-weight:400;font-display:swap;src:url('./vendor/fonts/archivo-latin-400.woff2') format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:600;font-display:swap;src:url('./vendor/fonts/archivo-latin-600.woff2') format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:700;font-display:swap;src:url('./vendor/fonts/archivo-latin-700.woff2') format('woff2')}
+  @font-face{font-family:'Bodoni Moda';font-weight:700;font-display:swap;src:url('./vendor/fonts/bodoni-moda-latin-700.woff2') format('woff2')}
   @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:100 800;font-display:swap;
     src:url('./vendor/fonts/jetbrains-mono-latin-wght.woff2') format('woff2')}
   :root{
-    --void:#080b09; --panel:#0d1411; --panel2:#101a15; --line:#1e2c24; --line2:#2c4034;
-    --ink:#cfe5d6; --sys:#5fd39a; --mid:#8fbfa4; --dim:#4e6a5c; --alert:#ff5a52;
+    /* the cabinet: warm carpet, felt, paper, brass, one lacquer-red accent */
+    --bg:#17110e; --surface:#211812; --surface-lo:#100c09;
+    --edge:rgba(224,178,104,.10); --edge-hi:rgba(255,236,200,.10);
+    --paper:#f3e8d7; --paper-2:#bdab94; --paper-3:#8b7c6b; --ash:#6e6157;
+    --brass:#e0b25f; --lacquer:#c4402d; --lacquer-hi:#d1492f; --lacquer-lo:#6a1c12; --rec:#ff5a52;
+    --display:'Bodoni Moda',Georgia,serif; --text:'Archivo',system-ui,sans-serif;
     --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+    --panel-shadow:inset 0 1px 0 var(--edge-hi),inset 0 0 0 1px var(--edge),0 2px 0 rgba(0,0,0,.5);
+    --emboss:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(125,35,24,.9),0 3px 0 var(--lacquer-lo),0 8px 18px rgba(0,0,0,.45);
+    --emboss-active:inset 0 1px 0 rgba(255,255,255,.18),0 1px 0 var(--lacquer-lo);
+    /* inside the feed the CRT keeps its green grade */
+    --void:#080b09; --panel:#0d1411; --ink:#cfe5d6; --sys:#5fd39a; --mid:#8fbfa4; --dim:#4e6a5c; --alert:#ff5a52;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
-  body{background:var(--void);color:var(--ink);font-family:var(--mono);overflow:hidden}
+  body{background:var(--bg);color:var(--paper);font:400 14px/1.4 var(--text);overflow:hidden}
+  button{font-family:inherit}
+  #balance,.stake .v,.vfig,.vrow b,#beak{font-variant-numeric:tabular-nums lining-nums}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 
-  .shell{height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 268px;
-    grid-template-rows:minmax(0,1fr);gap:12px;padding:12px}
-  @media (max-width:1000px){ .shell{grid-template-columns:minmax(0,1fr)} .side{display:none} }
+  .shell{height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  /* the feed keeps 16:9 and the column is sized from the height left over, so the
+     cabinet under it can never be pushed off the bottom of the viewport */
+  .col{width:min(100%,calc((100vh - 184px) * 16 / 9),1440px);display:flex;flex-direction:column;gap:12px}
 
-  .col{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
-  /* the monitor keeps 16:9 and fits inside whatever space is left, so the
-     controls below it can never be pushed off the bottom of the viewport */
-  .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
-  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
-    padding-bottom:9px;border-bottom:1px solid var(--line)}
-  .topbar h1{font:800 16px/1 var(--mono);letter-spacing:.2em}
-  .topbar h1::before{content:'';display:inline-block;width:6px;height:6px;margin-right:8px;border-radius:50%;
-    background:var(--alert);vertical-align:middle;position:relative;top:-1px}
-  .topbar .sub{font:500 9px/1 var(--mono);letter-spacing:.3em;color:var(--dim);margin-left:auto}
-  .snd{background:none;border:1px solid var(--line2);color:var(--mid);font:700 9px/1 var(--mono);
-    letter-spacing:.2em;padding:6px 9px;cursor:pointer}
-  .snd:hover{color:var(--ink)} .snd[aria-pressed="false"]{color:var(--dim)}
-  .snd:focus-visible,.go:focus-visible,.stake button:focus-visible{outline:2px solid var(--sys);outline-offset:2px}
+  .topbar{height:40px;display:flex;align-items:center;gap:10px}
+  .brand{font:700 23px/1 var(--display);letter-spacing:.01em}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--rec);box-shadow:0 0 9px rgba(255,90,82,.75)}
+  .cam{margin-left:6px;font:700 10px/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--paper-3)}
+  .tools{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .snd{display:flex;align-items:center;gap:8px;height:30px;padding:0 11px;border:0;border-radius:6px;background:var(--surface);
+    box-shadow:inset 0 0 0 1px var(--edge);font:400 12px/1 var(--text);color:var(--paper-2);cursor:pointer}
+  .snd[aria-pressed="false"]{color:var(--ash)}
+  kbd{font:700 10px/1 var(--text);padding:3px 5px;border-radius:3px;background:#2a1f17;color:var(--paper-3)}
+  .infobtn{background:none;border:0;padding:6px 2px;font:400 13px/1 var(--text);color:var(--paper-2);cursor:pointer}
+  .infobtn:hover,.snd:hover{color:var(--paper)}
 
-  .feed{position:relative;background:var(--panel);aspect-ratio:16/9;
-    width:100%;max-width:calc((100vh - 128px) * 16 / 9);max-height:100%;
-    border:1px solid var(--line2);border-radius:20px/13px;overflow:hidden}
+  .feed{position:relative;width:100%;aspect-ratio:16/9;background:var(--surface-lo);border-radius:14px;overflow:hidden;
+    box-shadow:inset 0 0 0 1px var(--edge),0 18px 44px rgba(0,0,0,.55)}
   .feed.shaking{animation:mountshake .42s ease-in-out infinite}
   @keyframes mountshake{0%,100%{transform:translate(0,0)}12%{transform:translate(-9px,4px)}
     24%{transform:translate(8px,-5px)}36%{transform:translate(-6px,-3px)}48%{transform:translate(7px,5px)}
@@ -64,7 +78,7 @@
     animation:hiss 3.4s ease-in-out infinite}
   @keyframes hiss{0%{opacity:.5}50%{opacity:.78}100%{opacity:.5}}
   .ov.vig{background:radial-gradient(ellipse at 50% 46%,transparent 34%,rgba(0,0,0,.42) 78%,rgba(0,0,0,.82) 100%)}
-  .ov.bezel{inset:-1px;border-radius:20px/13px;box-shadow:inset 0 0 70px 26px rgba(0,0,0,.6),inset 0 0 14px 2px rgba(0,0,0,.7)}
+  .ov.bezel{inset:-1px;border-radius:14px;box-shadow:inset 0 0 70px 26px rgba(0,0,0,.6),inset 0 0 14px 2px rgba(0,0,0,.7)}
   .roll{position:absolute;left:0;right:0;height:140px;pointer-events:none;
     background:linear-gradient(180deg,transparent,rgba(207,229,214,.055) 46%,rgba(207,229,214,.09) 52%,transparent);
     animation:roll 7s linear infinite}
@@ -76,124 +90,129 @@
   @keyframes dropshift{0%,96.4%{transform:translate(0,0)}96.5%,96.9%{transform:translate(-7px,3px)}97%,100%{transform:translate(0,0)}}
   .ov.glitch{background:repeating-linear-gradient(0deg,rgba(207,229,214,.2) 0 2px,rgba(0,0,0,.4) 2px 5px);opacity:0}
 
-  .burn{position:absolute;z-index:3;font:700 10px/1.75 var(--mono);letter-spacing:.14em;color:var(--sys);
+  .burn{position:absolute;z-index:3;font:700 10px/1.7 var(--mono);letter-spacing:.14em;color:var(--sys);
     text-shadow:0 0 9px rgba(95,211,154,.4);pointer-events:none}
-  .burn span{font-weight:500;color:rgba(95,211,154,.55)}
+  .burn span{font-weight:400;color:rgba(95,211,154,.55)}
   .burn.tl{top:14px;left:18px}
   .burn.tr{top:14px;right:18px;text-align:right}
+  .burn.tr span{font-weight:700;color:var(--sys)}
   .rec{position:absolute;z-index:3;top:48px;right:18px;display:flex;align-items:center;gap:7px;pointer-events:none}
   .rec i{width:8px;height:8px;border-radius:50%;background:var(--alert);
     box-shadow:0 0 10px rgba(255,90,82,.8);animation:recblink 1.5s steps(1,end) infinite}
   @keyframes recblink{0%,46%{opacity:1}50%,96%{opacity:.08}100%{opacity:1}}
   .rec span{font:700 9px/1 var(--mono);letter-spacing:.2em;color:var(--alert)}
 
-  .hud{position:absolute;z-index:3;bottom:16px;font:500 9.5px/1.8 var(--mono);letter-spacing:.1em;
-    color:rgba(95,211,154,.72);text-shadow:0 0 8px var(--panel),0 0 4px var(--panel);pointer-events:none}
-  .hud b{color:var(--ink);font-weight:700}
-  .hud.l{left:18px}
-  .hud.r{right:18px;text-align:right}
+  /* bottom strips: idle hint, live readout and result slab share the same footprint and never overlap */
+  .hint,.hud{position:absolute;z-index:3;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between;
+    gap:24px;pointer-events:none;background:linear-gradient(0deg,rgba(11,9,7,.92),rgba(11,9,7,.6) 60%,transparent)}
+  .hint{padding:22px 24px 20px}
+  .hint[hidden]{display:none}
+  .hint p{font:400 16px/1.5 var(--text);color:var(--paper);max-width:560px;text-wrap:pretty}
+  .hint p[hidden]{display:none}
+  .ptr{margin-left:auto;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;gap:4px;color:var(--brass);font:600 13px/1 var(--text)}
+  .hud{padding:22px 24px;opacity:0}
+  .feed.live .hud{opacity:1}
+  .hud .beakrow{display:flex;align-items:baseline;gap:14px}
+  .lbl{font:700 10px/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--paper-3)}
+  #beak{font:700 40px/1 var(--display);color:var(--brass)}
+  .mult{font:400 13px/1 var(--text);color:var(--paper-3)}
+  .mult[hidden]{display:none}
+  .mult b{font-weight:600;color:var(--paper-2)}
+  .stk{display:flex;align-items:baseline;gap:10px;font:400 13px/1 var(--text);color:var(--paper-3)}
+  .stk b{font-weight:600;color:var(--paper-2)}
 
-  .verdict{position:absolute;z-index:4;left:5%;top:26%;max-width:44%;opacity:0;transition:opacity .2s;pointer-events:none}
-  .verdict .stamp{display:inline-block;padding:6px 15px;border:1px solid var(--ink);
-    font:700 11px/1 var(--mono);letter-spacing:.3em;color:var(--ink);background:rgba(13,20,17,.55)}
-  .verdict[data-result="win"] .stamp{border-color:var(--sys);color:var(--sys)}
-  .verdict[data-result="caught"] .stamp,.verdict[data-result="partial"] .stamp{border-color:var(--alert);color:var(--alert)}
-  .verdict .line{font:700 13px/1.5 var(--mono);letter-spacing:.24em;color:var(--ink);margin-top:18px;text-shadow:0 0 9px var(--panel)}
-  .verdict .note{font:500 9.5px/1.7 var(--mono);letter-spacing:.2em;color:rgba(95,211,154,.8);margin-top:14px;text-shadow:0 0 9px var(--panel)}
+  .verdict{position:absolute;z-index:4;left:0;bottom:0;width:59%;padding:26px 26px 24px;display:flex;flex-direction:column;gap:12px;
+    background:linear-gradient(100deg,rgba(11,9,7,.96) 0%,rgba(11,9,7,.9) 62%,rgba(11,9,7,0) 100%);
+    opacity:0;transition:opacity .2s;pointer-events:none}
+  .vtag{align-self:flex-start;padding:5px 10px;border-radius:2px;background:#2a1f17;color:var(--paper-2);
+    font:700 10px/1 var(--text);letter-spacing:.16em;text-transform:uppercase}
+  .vfig{font:700 60px/1 var(--display);color:var(--paper-3)}
+  .vline{font:400 17px/1.4 var(--text);color:var(--paper-2)}
+  .vrow{display:flex;gap:34px;margin-top:6px}
+  .vrow div{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .vrow span{font:700 10px/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--paper-3)}
+  .vrow b{font:600 19px/1 var(--text)}
+  .vrow b.pos{color:var(--brass)} .vrow b.neg{color:var(--ash)}
+  .verdict[data-result="partial"] .vfig{color:var(--paper)}
+  .verdict[data-result="win"] .vtag{background:var(--brass);color:var(--bg)}
+  .verdict[data-result="win"] .vfig{color:var(--brass)}
+  .verdict[data-result="win"] .vline{color:var(--paper)}
+  .verdict[data-tier="big"] .vtag{background:var(--paper);color:var(--bg)}
+  .verdict[data-tier="big"] .vfig{font-size:68px}
+  .verdict[data-tier="jackpot"] .vtag{background:var(--lacquer);color:#fff3ec}
+  .verdict[data-tier="jackpot"] .vfig{font-size:86px}
+  /* big-win tiers: every element hard-cuts in, no easing, no count-up */
+  .verdict.bwv{transition:none}
+  .verdict.bwv > *{visibility:hidden}
+  .verdict.bwv > .show{visibility:visible}
 
-  .controls{display:grid;grid-template-columns:1fr;gap:9px}
-  .go{padding:16px;background:var(--sys);border:1px solid var(--sys);border-radius:2px;color:#04150c;
-    font:800 13px/1 var(--mono);letter-spacing:.14em;cursor:pointer}
-  .go:disabled{opacity:.4;cursor:default}
+  .cab{display:flex;align-items:center;gap:26px;height:88px;padding:0 20px;border-radius:10px;
+    background:linear-gradient(180deg,#241a13,#1c1410);box-shadow:var(--panel-shadow)}
+  .fld{display:flex;flex-direction:column;gap:7px}
+  #balance{font:600 28px/1 var(--text)}
+  .sep{width:1px;height:44px;background:rgba(224,178,104,.13)}
+  .stake{display:flex;align-items:center;gap:10px}
+  .key{width:34px;height:34px;border:0;border-radius:6px;background:linear-gradient(180deg,#31241a,#251b14);color:#d9c6ac;
+    font:600 19px/1 var(--text);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,236,200,.12),0 1px 0 rgba(0,0,0,.5)}
+  .key:active{transform:translateY(1px)}
+  .stake .v{min-width:92px;text-align:center;font:600 34px/1 var(--text)}
+  .presets{display:flex;gap:6px;margin-left:8px}
+  .pre{padding:6px 11px;border:0;border-radius:999px;background:#241a13;color:var(--paper-2);cursor:pointer;
+    box-shadow:inset 0 0 0 1px rgba(224,178,104,.14);font:600 12px/1 var(--text)}
+  .pre.on{background:var(--brass);color:var(--bg);box-shadow:none}
+  .cab.busy .stakefld{opacity:.45;pointer-events:none}
+  #controls{margin-left:auto}
+  .go{display:flex;align-items:center;gap:12px;height:60px;padding:0 26px;border:0;border-radius:8px;cursor:pointer;
+    background:linear-gradient(180deg,var(--lacquer-hi),#b4331f);color:#fff3ec;font:700 21px/1 var(--text);box-shadow:var(--emboss)}
+  .go kbd{padding:4px 7px;border-radius:4px;background:rgba(0,0,0,.26);color:inherit;font-size:11px;letter-spacing:.06em}
+  .go:active:not(:disabled){transform:translateY(2px);box-shadow:var(--emboss-active)}
+  .go:disabled{background:#241a13;color:var(--ash);box-shadow:inset 0 0 0 1px var(--edge);cursor:default}
+  .go .run{width:9px;height:9px;border-radius:50%;background:var(--ash)}
+  @media (pointer:coarse){ .go kbd{display:none} }
 
-  .side{display:flex;flex-direction:column;gap:10px;overflow-y:auto}
-  .card{background:var(--panel);border:1px solid var(--line);padding:13px;flex:none}
-  .card h2{font:700 9px/1 var(--mono);letter-spacing:.2em;color:var(--sys)}
-  .card .hd{display:flex;justify-content:space-between;align-items:center}
-  .tick{width:5px;height:5px;border-radius:50%;background:var(--sys);animation:tick 2s ease-in-out infinite}
-  @keyframes tick{0%,100%{opacity:.35}50%{opacity:1}}
-  .kv{display:flex;flex-direction:column;gap:7px;margin-top:12px}
-  .kv div{display:flex;justify-content:space-between;font:500 9px/1 var(--mono);color:var(--dim)}
-  .kv b{color:var(--ink);font-weight:700}
-  .kv b.g{color:var(--sys)}
-
-  .stake{display:flex;align-items:center;gap:8px;margin-top:11px}
-  .stake button{width:30px;height:30px;background:var(--panel2);border:1px solid var(--line2);
-    color:var(--mid);font:700 14px var(--mono);cursor:pointer}
-  .stake .v{flex:1;text-align:center;font:800 22px/1 var(--mono);color:var(--ink)}
-
-  .log{display:flex;flex-direction:column;gap:8px;margin-top:12px;font:500 8.5px/1.45 var(--mono);color:var(--mid);
-    max-height:190px;overflow-y:auto}
-  .log time{color:var(--dim)}
-  .log b{color:var(--ink);font-weight:700}
-  .log b.bad{color:var(--alert)}
-
-  details{margin-top:2px}
-  summary{cursor:pointer;font:700 9px var(--mono);letter-spacing:.2em;color:var(--sys);list-style:none}
-  .dbg{margin-top:11px;font:500 8.5px/1.7 var(--mono);color:var(--dim)}
-  .dbg b{color:var(--ink)}
-  .dbg .ok{color:var(--sys)}
+  dialog.info{margin:auto;width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:26px;border:0;
+    border-radius:10px;background:var(--surface);color:var(--paper);box-shadow:var(--panel-shadow),0 30px 70px rgba(0,0,0,.6)}
+  dialog.info::backdrop{background:rgba(11,9,7,.72)}
+  .info > *+*{margin-top:20px}
+  .ihd{display:flex;align-items:baseline;justify-content:space-between}
+  .ihd h2{font:700 22px/1 var(--display)}
+  .info p{font:400 15px/1.6 var(--text);color:var(--paper-2);text-wrap:pretty}
+  .info .fine{font-size:13px;color:var(--ash)}
+  .info .lbl{display:block;margin-bottom:9px}
+  .rows div{display:flex;justify-content:space-between;font:400 14px/1 var(--text);color:var(--paper-2)}
+  .rows div+div{margin-top:8px}
+  .rows b{font-weight:600;color:var(--paper)}
+  .info summary{cursor:pointer;font:600 13px/1 var(--text);color:var(--paper-2)}
+  .info details > div{margin-top:12px}
+  .log{display:flex;flex-direction:column;gap:7px;max-height:190px;overflow-y:auto;font:400 11px/1.45 var(--mono);color:var(--paper-3)}
+  .log time{color:var(--ash)}
+  .log b{color:var(--paper-2);font-weight:700}
+  .log b.bad{color:var(--lacquer-hi)}
+  .dbg{font:400 11px/1.7 var(--mono);color:var(--paper-3)}
+  .dbg b{color:var(--paper-2)}
+  .dbg .ok{color:var(--brass)}
   .dbg table{width:100%;border-collapse:collapse;margin-top:6px}
   .dbg td{padding:2px 3px}
   ::-webkit-scrollbar{width:7px}
-  ::-webkit-scrollbar-track{background:var(--panel)}
-  ::-webkit-scrollbar-thumb{background:var(--line2)}
-  /* idle hint + first-run operator notes (spec: Asset kit §03/§04) */
-  .veil{display:none;background:rgba(8,11,9,.55)}
-  .feed.notes-up .veil{display:block}
-  .feed.notes-up .rec,.feed.notes-up .hud.r,.feed.notes-up .hint{visibility:hidden}
-  .hint{position:absolute;z-index:3;left:0;right:0;bottom:30px;display:flex;justify-content:center;align-items:center;
-    gap:10px;font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--ink);text-shadow:0 0 9px var(--panel);pointer-events:none}
-  .hint[hidden]{display:none}
-  .hint i{width:8px;height:13px;background:var(--sys);animation:cursor 1s steps(1) infinite}
-  @keyframes cursor{0%{opacity:1}50%,100%{opacity:0}}
-  .notes{position:absolute;inset:0;z-index:5;pointer-events:none}
-  .notes[hidden]{display:none}
-  .noterow{position:absolute;left:3.6%;right:3.6%;top:18%;display:flex;gap:32px}
-  .onote{flex:0 1 300px;min-width:0;background:var(--panel);border:1px solid rgba(95,211,154,.35);padding:12px 14px;
-    display:flex;flex-direction:column;gap:8px;visibility:hidden}
-  .onote h3{font:700 10px/1 var(--mono);letter-spacing:.16em;color:var(--sys)}
-  .onote p{font:500 10px/1.6 var(--mono);letter-spacing:.06em;color:var(--ink)}
-  .leaders{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-  .ack{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);pointer-events:auto;padding:9px 16px;
-    border:1px solid var(--ink);background:rgba(13,20,17,.85);color:var(--ink);font:700 11px/1 var(--mono);
-    letter-spacing:.3em;cursor:pointer}
-  .ack:hover,.ack:focus-visible{background:var(--ink);color:var(--void)}
-  .ackhint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font:500 9px/1 var(--mono);letter-spacing:.2em;color:var(--dim)}
-  /* big-win tiers (spec: Asset kit §02): every element hard-cuts in, no easing, no count-up */
-  .verdict{display:flex;flex-direction:column;align-items:flex-start}
-  .vclass,.vbig,.vredact{display:none}
-  .verdict.bwv{transition:none}
-  .verdict.bwv .vclass,.verdict.bwv .vbig,.verdict.bwv .vredact{display:block}
-  .verdict.bwv .note{display:none}
-  .verdict.bwv > *{visibility:hidden}
-  .verdict.bwv > .show{visibility:visible}
-  .verdict[data-tier="jackpot"]{top:22%}
-  .vclass{padding:6px 10px;background:var(--ink);color:var(--void);font:800 11px/1 var(--mono);letter-spacing:.3em;margin-bottom:10px}
-  .verdict[data-tier="jackpot"] .vclass{background:var(--alert)}
-  .vbig .rl{display:block;margin-top:22px;font:700 9.5px/1 var(--mono);letter-spacing:.3em;color:rgba(95,211,154,.8)}
-  .vbig .fig{display:block;margin-top:8px;font:800 48px/1 var(--mono);color:var(--ink);text-shadow:0 0 18px rgba(207,229,214,.25)}
-  .verdict[data-tier="jackpot"] .vbig .fig{font-size:72px;text-shadow:0 0 22px rgba(207,229,214,.28)}
-  .vbig .net{display:block;margin-top:10px;font:700 13px/1 var(--mono);letter-spacing:.24em;color:var(--sys)}
-  .vredact{margin-top:20px;flex-direction:column;gap:9px;font:500 9.5px/1 var(--mono);letter-spacing:.2em;color:rgba(95,211,154,.8)}
-  .verdict.bwv .vredact{display:flex}
-  .vredact div{display:flex;align-items:center;gap:8px}
-  .vredact i{display:block;height:9px;background:var(--ink)}
+  ::-webkit-scrollbar-track{background:var(--surface)}
+  ::-webkit-scrollbar-thumb{background:#3a2c20}
+
+  /* big-win overlays (BIG >=5x, JACKPOT >=10x) and the jackpot-chip lift, all inside the feed */
   .bw,.lift{position:absolute;inset:0;z-index:4;pointer-events:none}
   .bw[hidden],.lift[hidden],.bw-alarm[hidden],.bw-enh[hidden]{display:none}
   .bw-band{position:absolute;left:0;right:0;top:64%;height:14px;opacity:.8;visibility:hidden;
     background:repeating-linear-gradient(0deg,rgba(207,229,214,.16) 0 2px,rgba(0,0,0,.35) 2px 5px)}
   .bw-band.show{visibility:visible}
-  .bw-alarm{position:absolute;inset:-1px;border-radius:20px/13px;
-    box-shadow:inset 0 0 0 3px var(--alert),inset 0 0 48px rgba(255,90,82,.22)}
-  .bw-top{position:absolute;top:52px;left:0;right:0;text-align:center;font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--sys)}
-  .bw-top.red{color:var(--alert)}
+  .bw-alarm{position:absolute;inset:-1px;border-radius:14px;
+    box-shadow:inset 0 0 0 3px var(--lacquer),inset 0 0 54px rgba(196,64,45,.22)}
+  .bw-top{position:absolute;top:40px;left:0;right:0;text-align:center;font:700 12px/1 var(--text);letter-spacing:.2em;
+    text-transform:uppercase;color:var(--sys)}
+  .bw-top.red{color:#e2574a}
   .bw-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-  .bw-enh{position:absolute;right:18px;top:78px;width:300px;height:169px;border:1px solid var(--ink);background:var(--void)}
+  .bw-enh{position:absolute;right:20px;top:74px;width:272px;height:153px;background:var(--bg);box-shadow:0 0 0 1px var(--paper)}
   .bw-enh canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-  .bw-cap{position:absolute;left:0;top:0;padding:5px 8px;background:var(--panel);font:700 9px/1 var(--mono);letter-spacing:.2em;color:var(--ink)}
-  .pbars{display:inline-flex;gap:2px;margin-right:6px;vertical-align:middle}
-  .pbars i{display:block;width:3px;height:8px;background:currentColor}
+  .bw-cap{position:absolute;left:0;top:0;padding:5px 8px;background:var(--bg);font:700 9px/1 var(--text);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--paper)}
   .feed.hold .rec i{animation:none;opacity:1}
   .feed.jp .rec{visibility:hidden}
   .lm{position:absolute;width:24px;height:24px}
@@ -204,26 +223,34 @@
   .lift-ret{position:absolute;width:104px;height:104px;border:1.5px solid var(--sys);transform:translate(-50%,-50%)}
   .lift-ret b{position:absolute;left:-1.5px;bottom:calc(100% + 8px);white-space:pre;background:var(--panel);
     border:1px solid rgba(95,211,154,.35);padding:8px;font:700 10px/1.5 var(--mono);letter-spacing:.06em;color:var(--sys)}
+
+  @media (max-width:760px){
+    body{overflow:auto}
+    .shell{height:auto;min-height:100vh;align-items:flex-start}
+    .col{width:100%}
+    .cab{flex-wrap:wrap;height:auto;padding:14px 16px;gap:14px 20px}
+    .sep{display:none}
+    #controls,.go{width:100%;justify-content:center}
+  }
   /* keep last: it has to override the animation declarations above */
   @media (prefers-reduced-motion:reduce){
-    .feed.shaking,.roll,.ov.hiss,.ov.drop,.ov.dropc,.rec i,.tick,.hint i{animation:none}
+    .feed.shaking,.roll,.ov.hiss,.ov.drop,.ov.dropc,.rec i{animation:none}
   }
 </style>
 </head>
 <body>
 <div class="shell">
-
   <div class="col">
     <div class="topbar">
-      <h1>CHIP THIEF</h1>
-      <div class="sub">SURVEILLANCE BUILD · FLOOR 1 · RTP 96.0%</div>
-      <button id="snd" class="snd" type="button" aria-pressed="true" title="Toggle sound (M)">SOUND ON</button>
+      <span class="brand">Chip Thief</span><span class="dot"></span><span class="cam">Cam 04</span>
+      <div class="tools">
+        <button id="snd" class="snd" type="button" aria-pressed="true" title="Toggle sound (M)"><span id="sndTxt">Sound on</span><kbd>M</kbd></button>
+        <button id="infoBtn" class="infobtn" type="button">Info</button>
+      </div>
     </div>
 
-    <div class="stage">
     <div class="feed" id="feed">
       <canvas id="cv" role="img" aria-label="Security camera feed: a goose runs a casino floor toward the fire exit"></canvas>
-      <div class="ov veil"></div>
       <div class="roll"></div>
       <div class="ov scan"></div>
       <div class="ov hiss"></div>
@@ -234,42 +261,26 @@
       <div class="ov bezel"></div>
 
       <div class="burn tl">CAM 04 · FLOOR 1<br><span id="statusLine">NO INCIDENT · 800m TO FIRE EXIT</span></div>
-      <div class="burn tr"><span id="clock">03:13:44.02</span><br><span id="fpsTxt">SAT · 25 FPS</span></div>
+      <div class="burn tr"><span id="clock">03:13:44.02</span></div>
       <div class="rec"><i></i><span>REC</span></div>
 
-      <div class="hud l">
-        <div>IN BEAK&nbsp;&nbsp;&nbsp;<b id="beak">0.00x</b></div>
-        <div>MULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b id="mult">×1</b></div>
-        <div>STAKE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b id="stakeHud">100</b></div>
-      </div>
-      <div class="hud r">
-        <div>STAFF DEPLOYED&nbsp;&nbsp;<b id="staffHud">0 / 3</b></div>
-        <div>RECOVERED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b id="recovered">0</b></div>
+      <div class="hud">
+        <div class="beakrow"><span class="lbl">In beak</span><b id="beak">0.00×</b><span class="mult" id="multWrap" hidden>Multiplier <b id="mult">×1</b></span></div>
+        <div class="stk"><span>Stake</span><b id="stakeHud">100</b></div>
       </div>
 
-      <div class="hint" id="hint"><span id="hintTxt">SPACE TO RELEASE</span><i></i></div>
-
-      <div class="notes" id="notes" hidden>
-        <div class="noterow">
-          <div class="onote" data-n="1"><h3>NOTE 1/3 · STAKE</h3><p>AMOUNT AT RISK FOR ONE RUN. SET IN THE STAKE PANEL BEFORE RELEASE.</p></div>
-          <div class="onote" data-n="2"><h3>NOTE 2/3 · IN BEAK</h3><p>CHIPS HELD BY THE SUBJECT, AS A MULTIPLE OF STAKE. PAID IF THE SUBJECT REACHES THE EXIT.</p></div>
-          <div class="onote" data-n="3"><h3>NOTE 3/3 · DETENTION</h3><p>IF STAFF DETAIN THE SUBJECT, ALL ASSETS ARE RECOVERED. THE HOUSE RETAINS THE STAKE.</p></div>
-        </div>
-        <svg class="leaders" id="leaders" aria-hidden="true"></svg>
-        <button class="ack" id="ack" type="button">ACKNOWLEDGE</button>
-        <div class="ackhint">ENTER · OR SPACE TO RELEASE</div>
+      <div class="hint" id="hint">
+        <p id="hintCopy">Set your stake, release the goose. Chips in its beak pay out if it reaches the exit.</p>
+        <div class="ptr"><span id="hintTxt">Press Space</span><svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M9 12 1 0h16z" fill="currentColor"/></svg></div>
       </div>
 
       <div class="verdict" id="verdict" role="status" aria-live="polite">
-        <div class="vclass" id="vClass"></div>
-        <div class="stamp" id="vStamp">CONTAINMENT FAILED</div>
-        <div class="line" id="vLine">SUBJECT LEFT THE<br>BUILDING</div>
-        <div class="note" id="vNote">ASSET RECOVERY: 0.00x</div>
-        <div class="vbig" id="vBig"></div>
-        <div class="vredact" id="vRedact"></div>
+        <span class="vtag" id="vTag"></span>
+        <span class="vfig" id="vFig"></span>
+        <span class="vline" id="vLine"></span>
+        <div class="vrow" id="vRow"></div>
       </div>
 
-      <!-- big-win overlays (BIG >=5x, JACKPOT >=10x) and the jackpot-chip lift -->
       <div class="bw" id="bw" hidden>
         <div class="bw-band" id="bwBand"></div>
         <div class="bw-alarm" id="bwAlarm" hidden></div>
@@ -283,55 +294,41 @@
         <div class="lift-ret" id="liftRet"><b id="liftLbl"></b></div>
       </div>
     </div>
-    </div>
 
-    <div class="controls" id="controls"></div>
-  </div>
-
-  <div class="side">
-    <div class="card">
-      <div class="hd"><h2>CAMERA SYSTEM</h2><div class="tick"></div></div>
-      <div class="kv">
-        <div><span>FEED</span><b>CAM 04</b></div>
-        <div><span>GAIN</span><b>+6 dB</b></div>
-        <div><span>TRACK LOCK</span><b class="g" id="lock">ANSER-1</b></div>
-        <div><span>TAPE</span><b id="tape">04:12 LEFT</b></div>
+    <div class="cab" id="cab">
+      <div class="fld"><span class="lbl">Balance</span><span id="balance">10,000</span></div>
+      <span class="sep"></span>
+      <div class="fld stakefld">
+        <span class="lbl">Stake</span>
+        <div class="stake">
+          <button class="key" id="stakeDn" type="button" aria-label="Lower stake">−</button>
+          <span class="v" id="stakeVal">100</span>
+          <button class="key" id="stakeUp" type="button" aria-label="Raise stake">+</button>
+          <span class="presets"><button class="pre" type="button" data-v="50">50</button><button class="pre" type="button" data-v="100">100</button><button class="pre" type="button" data-v="500">500</button></span>
+        </div>
       </div>
-    </div>
-
-    <div class="card">
-      <h2>STAKE</h2>
-      <div class="stake">
-        <button id="stakeDn">−</button>
-        <div class="v" id="stakeVal">100</div>
-        <button id="stakeUp">+</button>
-      </div>
-      <div class="kv"><div><span>BALANCE</span><b id="balance">10,000</b></div></div>
-    </div>
-
-    <div class="card">
-      <h2>INCIDENT LOG</h2>
-      <div class="log" id="log"></div>
-    </div>
-
-    <div class="card">
-      <h2>STAFF ON SHIFT</h2>
-      <div class="kv">
-        <div><span>CLEANER</span><b>RECOVERS 20%</b></div>
-        <div><span>SECURITY</span><b>RECOVERS 30%</b></div>
-        <div><span>PIT BOSS</span><b>RECOVERS 40%</b></div>
-        <div><span>K-9 UNIT</span><b>RECOVERS 60%</b></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <details>
-        <summary>MATH SELF-CHECK ▾</summary>
-        <div class="dbg" id="dbg">running…</div>
-      </details>
+      <div id="controls"></div>
     </div>
   </div>
 </div>
+
+<dialog class="info" id="info" aria-labelledby="infoTitle">
+  <div class="ihd"><h2 id="infoTitle">How it works</h2><button class="infobtn" id="infoClose" type="button">Close</button></div>
+  <p>Set a stake and release the goose. It crosses the floor for about ten seconds, grabbing chips. Reach the fire exit and the chips in its beak pay out as a multiple of your stake. Get caught by the guard on its heels and the run pays nothing.</p>
+  <div><span class="lbl">Keys</span><div class="rows">
+    <div><span>Release</span><b>Space or Enter</b></div>
+    <div><span>Stake up / down</span><b>↑ / ↓</b></div>
+    <div><span>Mute</span><b>M</b></div>
+  </div></div>
+  <div><span class="lbl">Staff on the floor</span><div class="rows">
+    <div><span>Cleaner</span><b>takes 20% of the haul</b></div>
+    <div><span>Security</span><b>takes 30% of the haul</b></div>
+    <div><span>Pit boss</span><b>takes 40% of the haul</b></div>
+  </div></div>
+  <p class="fine">Declared RTP 96.0% (about 95.9% after the 100× payout cap). Every run is decided by randomness before the goose moves; the footage just replays it.</p>
+  <details><summary>Maths and fairness</summary><div class="dbg" id="dbg">running…</div></details>
+  <details><summary>Run log</summary><div class="log" id="log"></div></details>
+</dialog>
 
 <script type="module">
 import { connect, WindowMessenger } from './vendor/penpal.js';
@@ -1170,7 +1167,8 @@ const sfxDispatch=() => { for(let i=0;i<5;i++) noise(.05,.05,i*.075,700+Math.ran
 let balance=10000, rounds=0, wagered=0, paid=0, best=0, recovered=0;
 let busy=false, runState=null;
 const $ = id => document.getElementById(id);
-const ctrl=$('controls'), logEl=$('log'), verdict=$('verdict'), glitch=$('glitch');
+const ctrl=$('controls'), cab=$('cab'), logEl=$('log'), verdict=$('verdict'), glitch=$('glitch');
+function setMult(m){ $('mult').textContent='×'+m; $('multWrap').hidden = m<=1; }
 
 let tc = 3*3600 + 13*60 + 44;   // running timecode
 function fmtTC(t){
@@ -1186,16 +1184,15 @@ function logLine(html){
 }
 
 function renderCtrls(){
-  ctrl.innerHTML='';
-  const go=document.createElement('button');
-  go.className='go'; go.id='go';
-  go.textContent = (hostApi && !canBetOnChain()) ? 'WAITING FOR WALLET' : 'RELEASE THE GOOSE';
-  go.onclick=launch;
+  const wait = hostApi && !canBetOnChain();
   // Demo mode keeps its original always-enabled behavior (a click with an
   // insufficient balance is a silent no-op in launch()); chain mode gates on
   // wallet readiness, since there's no local balance to fall back on.
-  go.disabled = busy || (hostApi && !canBetOnChain());
-  ctrl.appendChild(go);
+  ctrl.innerHTML = busy
+    ? '<button class="go" id="go" type="button" disabled><i class="run"></i>Running</button>'
+    : `<button class="go" id="go" type="button">${wait ? 'Waiting for wallet' : (rounds ? 'Release again' : 'Release')}${wait ? '' : '<kbd>Space</kbd>'}</button>`;
+  const go=$('go'); go.onclick=launch; go.disabled = busy || wait;
+  cab.classList.toggle('busy', busy);
 }
 
 // Largest wager openSession will accept right now, in human token units —
@@ -1224,7 +1221,11 @@ function onHostSnapshot(snap){
 
 $('stakeUp').onclick=()=>{ if(!busy){ STAKE=Math.min(1000, maxWagerHumanUnits(), STAKE+50); syncStake(); } };
 $('stakeDn').onclick=()=>{ if(!busy){ STAKE=Math.max(50,STAKE-50); syncStake(); } };
-function syncStake(){ $('stakeVal').textContent=STAKE; $('stakeHud').textContent=STAKE; }
+function syncStake(){ $('stakeVal').textContent=STAKE; $('stakeHud').textContent=STAKE;
+  document.querySelectorAll('.pre').forEach(b=>b.classList.toggle('on', +b.dataset.v===STAKE)); }
+document.querySelectorAll('.pre').forEach(b=>b.onclick=()=>{ if(!busy){ STAKE=Math.max(50,Math.min(+b.dataset.v, maxWagerHumanUnits())); syncStake(); } });
+// a mouse click leaves focus on the button, and then Space would press it again instead of releasing the goose
+document.querySelectorAll('.key,.pre,.snd').forEach(b=>b.addEventListener('click', e=>{ if (e.detail) b.blur(); }));
 
 function stepFx(){
   particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=p.grav; p.life-=p.decay;
@@ -1282,9 +1283,10 @@ async function openChainSession(t){
 async function launch(){
   if (busy) return;
   if (hostApi ? !canBetOnChain() : balance<STAKE) return;
-  dismissNotes(false); $('hint').hidden = true;    // the hint is for the first release only
+  $('hint').hidden = true;                          // the hint is for the first release only
+  try { localStorage.setItem(BRIEFED,'1'); } catch {}
   clearBigWin();                                   // a held big-win frame stays up until the next release
-  busy=true; renderCtrls(); verdict.style.opacity=0;
+  busy=true; renderCtrls(); verdict.style.opacity=0; feedEl.classList.add('live');
   particles=[]; rings=[]; doorOpen=0; doorBurst=0; chain=0;
   gooseSquash=0; gooseAir=false; gooseHurt=0; gooseWon=0; gooseFull=false;
   feedEl.classList.remove('shaking');
@@ -1294,7 +1296,7 @@ async function launch(){
   if (canBetOnChain()){
     try { o = await openChainSession(t); }
     catch (err){
-      busy=false; renderCtrls();
+      busy=false; renderCtrls(); feedEl.classList.remove('live');
       logLine(`<b class="bad">SESSION FAILED</b> ${String((err && err.message) || err)}`);
       return;
     }
@@ -1309,10 +1311,8 @@ async function launch(){
   let prevY=GOOSE_FLY, wasAir=false, stepAt=0, vEl=0, lastT=performance.now(), rate=1;
   let pull=0;   // pending inward pull on the guard, one dose per real pickup
   let staffSeen=0;
-  const staffTotal=t.steal.n;
   hissStart(); sfxDispatch();
   logLine('incident opened · subject released');
-  $('lock').textContent='ANSER-1';
 
   const cs=()=>run.items.filter(i=>i.kind==='chip'&&i.taken).reduce((a,b)=>a+b.value,0);
   const mp=()=>run.items.filter(i=>i.kind==='mult'&&i.taken).reduce((a,b)=>a*b.m,1);
@@ -1371,7 +1371,6 @@ async function launch(){
       feedEl.classList.add('shaking');
       setTimeout(()=>{ flashFrames = 4; }, 200);
       setTimeout(()=>feedEl.classList.remove('shaking'), 700);
-      $('lock').textContent = 'DETAINED';
       logLine(`<b class="bad">SUBJECT DETAINED</b> at ${Math.round((DOOR_X-gx)/10)}m`);
       let hold = 0;
       (function capture(){
@@ -1389,8 +1388,7 @@ async function launch(){
       // radio squelch ahead of a contact
       if (it.kind==='steal' && it.got && !it.warned && it.x-gx<260 && it.x-gx>0){
         it.warned=true; sfxSquelch(); staffSeen++;
-        $('staffHud').textContent=`${staffSeen} / ${staffTotal}`;
-      }
+        }
       if (!it.taken && it.got && gx>=it.x){
         it.taken=true;
         if (it.kind!=='steal') pull += 20;
@@ -1422,8 +1420,8 @@ async function launch(){
         }
         run.bag = t.scale*cs()*mp()*sp();
         run.mult = mp();
-        $('beak').textContent = run.bag.toFixed(2)+'x';
-        $('mult').textContent = '×'+run.mult;
+        $('beak').textContent = run.bag.toFixed(2)+'×';
+        setMult(run.mult);
       }
       if (!it.taken && !it.got && it.kind==='steal' && !it.vaulted && gx>=it.x){
         it.vaulted=true; sfxVault(); logLine(`${it.nm} evaded`);
@@ -1441,7 +1439,6 @@ async function launch(){
     if (prog<1) requestAnimationFrame(frame);
     else {
       run.running=false; gooseWon=1; doorBurst=1; doorOpen=.01; sfxDoor();
-      $('lock').textContent='LOST';
       if (o.payout>=5){
         // BIG / JACKPOT: hold the very frame the goose crosses the line, no door outro
         heldGy=run.pathY(DOOR_X); doorOpen=.6; stepFx();
@@ -1466,27 +1463,23 @@ let clockHold=false, heldFrame=false, heldGy=GOOSE_FLY, lift=null, liftPending=n
 const holdCv=document.createElement('canvas'), holdCtx=holdCv.getContext('2d');
 const incNo=()=>String(412+rounds).padStart(4,'0');   // rounds is already counted when a verdict is staged
 const later=(ms,fn)=>setTimeout(fn,ms);
-const HOLD_BARS='<span class="pbars"><i></i><i></i><i></i></span>HOLD';
 
 function snapshotFrame(){ holdCv.width=cv.width; holdCv.height=cv.height; holdCtx.drawImage(cv,0,0); }
 function enterHold(jp){
   clockHold=true; feedEl.classList.add('hold'); if (jp) feedEl.classList.add('jp');
-  $('fpsTxt').innerHTML=HOLD_BARS;
   $('statusLine').textContent='FRAME HOLD · INCIDENT '+incNo();
   if (!REDUCED){ glitch.style.opacity='1'; later(80,()=>{ glitch.style.opacity='0'; }); }
 }
-function exitHold(){ clockHold=false; feedEl.classList.remove('hold','jp'); $('fpsTxt').textContent='SAT · 25 FPS'; }
+function exitHold(){ clockHold=false; feedEl.classList.remove('hold','jp');  }
 
 function clearBigWin(){
   heldFrame=false; exitHold(); lift=null; liftPending=null; ctx.imageSmoothingEnabled=true;
   verdict.classList.remove('bwv'); delete verdict.dataset.tier;
-  ['vClass','vStamp','vLine','vBig','vRedact'].forEach(id=>$(id).classList.remove('show'));
-  $('vClass').textContent=''; $('vBig').innerHTML=''; $('vRedact').innerHTML='';
+  ['vTag','vFig','vLine','vRow'].forEach(id=>$(id).classList.remove('show'));
   $('bw').hidden=true; $('bwBand').classList.remove('show'); $('bwAlarm').hidden=true;
   $('bwTop').textContent=''; $('bwTop').classList.remove('red'); $('bwEnh').hidden=true; $('bwSvg').innerHTML='';
   $('lift').hidden=true;
-  $('beak').textContent='0.00x'; $('mult').textContent='×1'; $('staffHud').textContent='0 / '+RUN.steal.n;
-  $('lock').textContent='ANSER-1'; $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
+  $('beak').textContent='0.00×'; setMult(1); $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
   pursuit=300; shake=0; particles=[]; rings=[]; gooseWon=0; gooseFull=false; gooseHurt=0;
 }
 
@@ -1495,36 +1488,42 @@ function showEnhance(){
   const gy=heldGy-20, ectx=$('enh').getContext('2d');
   ectx.imageSmoothingEnabled=false;
   ectx.drawImage(holdCv,(GOOSE_X-120)*SCALE,(gy-67.5)*SCALE,240*SCALE,135*SCALE,0,0,165,93);
-  $('enhCap').textContent='ENHANCE ×2.3 · FRAME '+incNo();
+  $('enhCap').textContent='Enhance · frame '+incNo();
   $('bwEnh').hidden=false;
   const k=feedEl.clientHeight/620, W=feedEl.clientWidth, cx=GOOSE_X*k, cy=gy*k, bw=120*k, bh=100*k;
   $('bwSvg').innerHTML=
     `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" fill="none" stroke="rgba(207,229,214,.6)" stroke-dasharray="4 3"/>`+
-    `<line x1="${cx+bw/2}" y1="${cy-bh/2}" x2="${W-18-300}" y2="${78+169}" stroke="rgba(207,229,214,.6)" stroke-dasharray="4 3"/>`;
+    `<line x1="${cx+bw/2}" y1="${cy-bh/2}" x2="${W-20-272}" y2="${74+153}" stroke="rgba(207,229,214,.6)" stroke-dasharray="4 3"/>`;
+}
+
+const fmtNet = n => (n<0 ? '−' : '+') + Math.abs(n).toLocaleString();
+function fillVerdict(result, tag, payout, line, won, net){
+  verdict.dataset.result = result;
+  $('vTag').textContent = tag;
+  $('vFig').textContent = payout.toFixed(2)+'×';
+  $('vLine').textContent = line;
+  const row = (l,v,c) => `<div><span>${l}</span><b${c ? ` class="${c}"` : ''}>${v}</b></div>`;
+  $('vRow').innerHTML = row('Stake', STAKE.toLocaleString())
+    + (result==='caught' ? '' : row('Payout', Math.round(won).toLocaleString()))
+    + row('Net', fmtNet(net), net>0 ? 'pos' : 'neg');
 }
 
 function presentBigWin(tier, payout, net, chainMode, sessionId){
   const jp = tier==='jackpot', show=id=>$(id).classList.add('show');
   snapshotFrame(); heldFrame=true;
   enterHold(jp);
-  verdict.dataset.tier=tier; verdict.dataset.result='win'; verdict.classList.add('bwv');
-  $('vClass').textContent = jp ? 'INCIDENT CLASS A · CRITICAL LOSS' : 'INCIDENT CLASS B · MAJOR LOSS';
-  $('vStamp').textContent='CONTAINMENT FAILED';
-  $('vLine').innerHTML='SUBJECT LEFT THE<br>BUILDING';
-  $('vBig').innerHTML=`<span class="rl">ASSET RECOVERY:</span><span class="fig">${payout.toFixed(2)}x</span><span class="net">NET +${net.toLocaleString()}</span>`;
-  $('vRedact').innerHTML = jp
-    ? '<div><span>NOTIFY</span><i style="width:44px"></i><i style="width:80px"></i></div><div><span>ESCALATED TO</span><i style="width:112px"></i></div>'
-    : '<div><span>FILED BY</span><i style="width:96px"></i><span>· SHIFT 3</span></div>';
+  verdict.dataset.tier=tier; verdict.classList.add('bwv');
+  fillVerdict('win', jp ? 'Incident class A · Jackpot' : 'Incident class B · Major loss', payout,
+    jp ? 'Subject left the building with the plaque.' : 'The house would like a word with the duty manager.', payout*STAKE, net);
   verdict.style.opacity=1;
   $('bw').hidden=false;
   if (jp){
-    $('bwAlarm').hidden=false; $('bwTop').textContent='ALARM · SEVERITY 1'; $('bwTop').classList.add('red');
+    $('bwAlarm').hidden=false; $('bwTop').textContent='Alarm · severity 1'; $('bwTop').classList.add('red');
     if (!REDUCED){ later(200,()=>{ $('bwAlarm').hidden=true; }); later(400,()=>{ $('bwAlarm').hidden=false; }); }
   }
   later(80,()=>$('bwBand').classList.add('show'));
-  later(160,()=>show('vClass')); later(280,()=>show('vStamp')); later(400,()=>show('vLine'));
-  later(560,()=>{ show('vBig'); logLine(`subject at exit · recovery <b>${payout.toFixed(2)}x</b>`); refreshHud(chainMode); });
-  if (jp){ later(720,showEnhance); later(900,()=>show('vRedact')); } else later(800,()=>show('vRedact'));
+  later(160,()=>show('vTag')); later(400,()=>show('vFig')); later(560,()=>{ show('vLine'); logLine(`subject at exit · recovery <b>${payout.toFixed(2)}x</b>`); refreshHud(chainMode); });
+  if (jp){ later(720,showEnhance); later(900,()=>show('vRow')); } else later(800,()=>show('vRow'));
   later(1500,()=>{
     busy=false; renderCtrls();
     if (chainMode) hostApi.revealOutcome({ sessionId }).catch(() => {});   // presentation is done
@@ -1535,8 +1534,7 @@ function presentBigWin(tier, payout, net, chainMode, sessionId){
 function startLift(it, camX){
   snapshotFrame();
   lift={t0:performance.now(), cx:(it.x-camX)*SCALE, cy:it.y*SCALE, label:it.chip.label, flagged:false, off:false};
-  clockHold=true; feedEl.classList.add('hold'); $('fpsTxt').innerHTML=HOLD_BARS;
-}
+  clockHold=true; feedEl.classList.add('hold'); }
 function renderLift(now){
   const e=now-lift.t0;
   const z = e<40 ? 1.2 : e<80 ? 1.4 : e<480 ? 1.6 : e<520 ? 1.3 : 1;      // hard digital-zoom steps
@@ -1560,10 +1558,7 @@ function endLift(){ lift=null; ctx.imageSmoothingEnabled=true; $('lift').hidden=
 
 function refreshHud(chainMode){
   if (!chainMode) $('balance').textContent = Math.round(balance).toLocaleString();
-  $('recovered').textContent = Math.round(recovered).toLocaleString();
   const sr=$('sessionRtp'); if (sr) sr.textContent = `${rounds} runs · ${(100*paid/wagered).toFixed(1)}%`;
-  const tapeLeft = Math.max(0, 252 - rounds*7);
-  $('tape').textContent = `${String(Math.floor(tapeLeft/60)).padStart(2,'0')}:${String(tapeLeft%60).padStart(2,'0')} LEFT`;
 }
 
 function settle(payout, caught, sessionId){
@@ -1579,15 +1574,14 @@ function settle(payout, caught, sessionId){
   // Escaping is not the same as winning: a run that gets out but pays under
   // 1x still costs the player money, and the screen has to say so plainly.
   const net = Math.round(won - STAKE);
+  feedEl.classList.remove('live');
   if (!caught && payout>=5){ presentBigWin(payout>=10 ? 'jackpot' : 'big', payout, net, chainMode, sessionId); return; }
   const result = caught ? 'caught' : (won >= STAKE ? 'win' : 'partial');
-  verdict.dataset.result = result;
-  $('vStamp').textContent = {caught:'SUBJECT DETAINED', win:'CONTAINMENT FAILED', partial:'PARTIAL RECOVERY'}[result];
-  $('vLine').innerHTML = {caught:'ALL ASSETS<br>RECOVERED', win:'SUBJECT LEFT THE<br>BUILDING', partial:'SUBJECT LEFT WITH<br>PART OF THE HAUL'}[result];
-  $('vNote').innerHTML = caught
-    ? `ASSET RECOVERY: 0.00x<br>HOUSE RETAINS ${STAKE.toLocaleString()}`
-    : `ASSET RECOVERY: ${payout.toFixed(2)}x<br>${net>=0?'NET +':'LOSS '}${Math.abs(net).toLocaleString()}`;
-  verdict.style.opacity=1;
+  fillVerdict(result,
+    {caught:'Detained', win:'Escaped', partial:'Escaped · short'}[result], caught ? 0 : payout,
+    {caught:'Subject did not leave the building.', win:'Subject left the building.', partial:'Subject left the building with part of the haul.'}[result],
+    won, net);
+  verdict.style.opacity=1; feedEl.classList.remove('live');
   if (!caught) logLine(`subject at exit · recovery <b${payout<1?' class="bad"':''}>${payout.toFixed(2)}x</b>`);
 
   refreshHud(chainMode);
@@ -1599,86 +1593,44 @@ function settle(payout, caught, sessionId){
 
   setTimeout(()=>{
     // gooseHurt never ticked back down because the frame loop stops on a catch
-    verdict.style.opacity=0; busy=false; gooseWon=0; gooseFull=false; gooseHurt=0;
+    busy=false; gooseWon=0; gooseFull=false; gooseHurt=0;
     pursuit=300; shake=0; particles=[]; rings=[];
     renderCtrls();
-    $('beak').textContent='0.00x'; $('mult').textContent='×1';
-    $('staffHud').textContent='0 / '+RUN.steal.n;
-    $('lock').textContent='ANSER-1';
+    $('beak').textContent='0.00×'; setMult(1);
     $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
   }, 1700);
+  setTimeout(()=>{ if (!busy) verdict.style.opacity=0; }, 3600);   // long enough to read the slab, then the idle scene is back
 }
 
 // Start immediately. This is a module script, so the DOM is already parsed; waiting for
 // `load` gated the whole game on every third-party request (fonts, the jam widget) —
 // measured at 23s to a clickable button when those were slow or blocked.
 fit(); renderCtrls(); syncStake(); idleFrame();
-$('staffHud').textContent='0 / '+RUN.steal.n;
 logLine('system armed · cam 04 online');
 
 function setMuted(m){
   muted = m; try { localStorage.setItem('ct-muted', m?'1':'0'); } catch {}
-  const b=$('snd'); b.textContent = m ? 'SOUND OFF' : 'SOUND ON'; b.setAttribute('aria-pressed', String(!m));
+  const b=$('snd'); $('sndTxt').textContent = m ? 'Sound off' : 'Sound on'; b.setAttribute('aria-pressed', String(!m));
   if (ambG) ambG.gain.setTargetAtTime(m ? 0 : .022, actx.currentTime, .1);
 }
 setMuted(muted);
 $('snd').onclick = () => setMuted(!muted);
 
-// ── first-run operator notes: three in-world callouts, shown once ──
+// ── first-run hint: one line of guidance until the first release, then just the pointer ──
 const BRIEFED='chipthief.briefed';
-let notesUp=false;
-$('hintTxt').textContent = matchMedia('(pointer:coarse)').matches ? 'TAP RELEASE' : 'SPACE TO RELEASE';
+$('hintTxt').textContent = matchMedia('(pointer:coarse)').matches ? 'Tap Release' : 'Press Space';
+try { if (localStorage.getItem(BRIEFED)) $('hintCopy').hidden = true; } catch {}
 
-function revealNotes(k){
-  document.querySelectorAll('#notes [data-n]').forEach(el => { el.style.visibility = (+el.dataset.n<=k) ? 'visible' : 'hidden'; });
-}
-// Leaders point at the real HUD elements (measured), so they stay attached at any feed size.
-function layoutNotes(){
-  const fr=feedEl.getBoundingClientRect(), k=fr.height/620;
-  const rel=el=>{ const r=el.getBoundingClientRect(); return {l:r.left-fr.left,t:r.top-fr.top,r:r.right-fr.left,b:r.bottom-fr.top}; };
-  const notes=[...document.querySelectorAll('.onote')].map(rel);
-  const grow=r=>({l:r.l-6,t:r.t-3,r:r.r+6,b:r.b+3});
-  const beak=grow(rel($('beak').parentElement)), stake=grow(rel($('stakeHud').parentElement)), mult=rel($('mult').parentElement);
-  const hudRight=Math.max(beak.r,stake.r,mult.r);
-  const pitX=610*k-(START_X-GOOSE_X)*k+0, pitY=404*k;
-  const path=(n,d)=>`<path data-n="${n}" d="${d}" fill="none" stroke="#5fd39a" stroke-width="1" stroke-dasharray="4 3"/>`;
-  const brk=(n,r,a=10)=>`<path data-n="${n}" d="M${r.l+a} ${r.t}H${r.l}V${r.t+a}M${r.r-a} ${r.t}H${r.r}V${r.t+a}M${r.l+a} ${r.b}H${r.l}V${r.b-a}M${r.r-a} ${r.b}H${r.r}V${r.b-a}" fill="none" stroke="#5fd39a" stroke-width="2"/>`;
-  const via1=hudRight+30, via2=(GOOSE_X+88+16)*k;      // note 2's vertical clears the goose's reticle
-  const clampX=(n,x)=>Math.min(Math.max(x,notes[n].l+16),notes[n].r-16);
-  $('leaders').innerHTML =
-    path(1,`M${clampX(0,via1)} ${notes[0].b}V${(stake.t+stake.b)/2}H${stake.r}`)+brk(1,stake)+
-    path(2,`M${clampX(1,via2)} ${notes[1].b}V${(beak.t+beak.b)/2}H${beak.r}`)+brk(2,beak)+
-    path(3,`M${notes[2].l+30} ${notes[2].b}V${pitY}H${pitX+64*k}`);
-}
-function showNotes(){
-  let seen=false; try { seen=!!localStorage.getItem(BRIEFED); } catch {}
-  if (seen) return;
-  notesUp=true; feedEl.classList.add('notes-up'); $('notes').hidden=false;
-  $('statusLine').textContent='OPERATOR NOTES · 3';
-  layoutNotes();
-  revealNotes(1); setTimeout(()=>revealNotes(2),120); setTimeout(()=>revealNotes(3),240);   // hard cuts, not fades
-}
-function dismissNotes(thenRelease){
-  if (!notesUp) return;
-  notesUp=false; feedEl.classList.remove('notes-up'); $('notes').hidden=true;
-  try { localStorage.setItem(BRIEFED,'1'); } catch {}
-  if (!busy) $('statusLine').textContent='NO INCIDENT · 800m TO FIRE EXIT';
-  if (thenRelease) launch();
-}
-$('ack').onclick = () => dismissNotes(false);
-addEventListener('resize', () => { if (notesUp) layoutNotes(); });
-document.fonts?.ready.then(() => { if (notesUp) layoutNotes(); });
-showNotes();
+const info=$('info');
+$('infoBtn').onclick = () => info.showModal();
+$('infoClose').onclick = () => info.close();
+info.addEventListener('click', e => { if (e.target === info) info.close(); });   // backdrop click
 
 // Keyboard: more bets per minute for people who play with one hand on the space bar.
 addEventListener('keydown', e => {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key, t = e.target;
-  if (notesUp){
-    if (k === ' '){ e.preventDefault(); dismissNotes(true); }
-    else if (k === 'Enter' || k === 'Escape'){ e.preventDefault(); dismissNotes(false); }
-    return;
-  }
+  if (info.open) return;
   const onOtherControl = t.closest && t.closest('button,summary,a,input') && t.id !== 'go';
   if ((k === ' ' || k === 'Enter') && !onOtherControl){ e.preventDefault(); launch(); }
   else if (k === 'ArrowUp' || k === '+' || k === '='){ e.preventDefault(); $('stakeUp').click(); }

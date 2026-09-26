@@ -4,57 +4,47 @@ Handoff notes for a fresh session. Read this before touching anything; a lot of
 what looks like an obvious improvement below has already been tried and rejected
 for a stated reason.
 
-## START HERE — status as of 2026-09-25 (end of a long session)
+## START HERE — status as of 2026-09-26
 
-**The game is built, polished and verified. What's left is packaging: commit, host, submit.**
-Deadline is **Sun 27 Sep 2026, 23:59 UTC** (extended from the 20th). The jam page says "Submit
-early, update until the deadline. Same URL, newest build counts" — so deploy and submit a
-working build FIRST, then keep polishing and redeploy to the same URL.
+**Live and public.** Deployed on Vercel at **https://chip-thief.vercel.app** (game at `/chip-thief.html`,
+`/` redirects; `prototypes/vercel.json` adds the redirect + CORS on the manifest). Repo is **public**.
+Manifest has `assets.iconUrl/coverUrl`, the page has `og:image`/`twitter:card`, manifest validates.
+Deadline **Sun 27 Sep 2026, 23:59 UTC**; "same URL, newest build counts", so submit first, polish after.
 
-**Uncommitted work.** Last push was `7861e0e`. Everything since is only in the working tree:
-the paytable rebalance + real jackpot (two passes, see "Why the paytable was rebalanced"),
-guard fix, load-time fix, self-hosted font, keyboard/mute/reduced-motion, the design kit
-(idle scene, first-run notes, big-win tiers, jackpot lift), store images, docs. Files:
-`.gitignore CLAUDE.md README.md contract/ChipThiefGame.sol prototypes/chip-thief.html` +
-new `prototypes/assets/` and `prototypes/vendor/fonts/`. Commit it before anything else
-(the user asks before pushing; commit messages end with the Co-Authored-By line from the
-session's attribution reminder).
+**Deploy:** `cd prototypes && npx vercel deploy --prod --yes` (already logged in and linked; `.vercel/` is
+untracked). No build step.
 
-**Do next, in order:**
-1. Commit + push (ask first).
-2. Pick a static host and deploy `prototypes/` as the site root — no build step. Needs HTTPS,
-   and `game.manifest.json` must be served with CORS (the simulator/host fetch it
-   cross-origin). Serve `chip-thief.html` at a stable URL; consider an `index.html` redirect.
-3. With the final URL: add `assets.iconUrl`/`coverUrl` to `game.manifest.json`, and
-   `og:image` + `twitter:card` to the page head (files already in `prototypes/assets/`).
-   Redeploy. Re-run `validateCasinoGameManifest` (see SDK section) after editing.
-4. `gh repo edit --visibility public` (full path to gh below) — source access is required.
-5. Submit at jam.chain.wtf (needs VPN from the user's region). Form fields: Game title, Game
-   URL, Declared RTP, Discord, X, Telegram, Source access, Pitch. Declare **96.0%**
-   (~95.9% effective after the 100× cap — say so in the pitch). The jam checks the widget
-   automatically on submit, so verify the hosted page loads `widget.js` and shows the badge.
+**Still to do:**
+1. Submit at jam.chain.wtf (needs the user's VPN). Game URL `https://chip-thief.vercel.app/chip-thief.html`,
+   declared RTP **96.0%** (~95.9% effective after the 100× cap; say so in the pitch). The jam checks the
+   widget on submit, so confirm the hosted page shows the badge.
+2. Ask the Chain team (discord.gg/3kpZHvvTq) whether they deploy/whitelist the contract themselves: it has
+   only run on the local simulator chain, is unaudited and not on Base.
+3. Store images in `prototypes/assets/` (icon/cover/social) were made for the old teal CCTV look; regenerate
+   them in the new warm palette if there is time.
 
-**Open questions worth raising with the user / the Chain team:**
-- The contract (`contract/ChipThiefGame.sol`) has only ever run on the local simulator chain:
-  not audited, not deployed to Base. SDK docs list "audited contract + hosted frontend" as the
-  ship deliverables but the jam form only asks for a URL and source — check with the Chain
-  team (Discord discord.gg/3kpZHvvTq) whether they deploy/whitelist it themselves.
-- Judgment calls left as-is: the jackpot-chip lift is a spoiler (see design-kit section);
-  a capture forfeits the whole haul (half of captures land with ≥0.5× in the beak — "feels
-  rigged" risk; a partial-keep on capture is the option, and would change the whole paytable);
-  auto-bet was never designed or built.
+**UI chrome redesign (2026-09-26, from the Claude Design export "Assets New/", gitignored).** The page
+frame is now a warm "cabinet" (Bodoni Moda wordmark/figures, Archivo text, brass + lacquer-red accent,
+felt-brown surfaces): topbar, feed, one cabinet strip (balance | stake steppers + 50/100/500 presets |
+Release). The feed keeps its green CRT grade; only the frame changed. Removed from the player's view:
+sidebar, camera/tape/lock readouts, staff-deployed/recovered HUD, the three boxed first-run notes, the
+"CONTAINMENT FAILED" stamp. Operator stuff lives in the **Info** `<dialog>` (how it works, keys, staff
+cuts, declared RTP, Maths and fairness = the self-check, Run log). First run shows one line of guidance in
+the feed plus a "Press Space" pointer. Results are a bottom-left slab (tag, Bodoni figure, one deadpan line,
+Stake/Payout/Net): brass only when net > 0, a <1× escape is cream + "Escaped · short". Normal results fade
+after ~3.6s, BIG/JACKPOT stay until the next release. Fonts are four extra self-hosted woff2 (~58 kB).
+Palette/tokens are the `:root` block in `chip-thief.html`. Verified by screenshot at 1280×720, 1024×560,
+390×800 and via forced BIG/JACKPOT copies. Not re-verified: chain mode inside the simulator after this
+restyle (the bridge code was not touched, only DOM ids/markup), and the caught/partial slabs by eye.
 
-**Environment gotchas.** jam.chain.wtf needs a VPN from the user's country (sdk.chain.wtf did
-not). The local test stack (`casino-sdk/`: `npm start` = chain :8545 + VRF + simulator :3300)
-must be restarted each session; it is gitignored and re-downloadable. Headless Chrome is at
-`C:\Program Files\Google\Chrome\Application\chrome.exe` and was driven over raw CDP (no
-Playwright installed). Scratch scripts live in the session scratchpad, not the repo. Windows
-+ Git Bash: `pkill` doesn't stop these processes; use `netstat -ano` + `Stop-Process -Id`.
+**Environment gotchas.** jam.chain.wtf needs a VPN from the user's country. The local test stack
+(`casino-sdk/`: `npm start` = chain :8545 + VRF + simulator :3300) is gitignored and re-downloadable.
+Headless Chrome (`C:\Program Files\Google\Chrome\Application\chrome.exe`) is driven over raw CDP (Node's
+global WebSocket; no Playwright). Windows + Git Bash: `pkill` doesn't stop processes; use `netstat -ano` +
+`Stop-Process -Id`. gh is at `C:\Program Files\GitHub CLI\gh.exe` (not on PATH).
 
-**How the user likes to work:** blunt honesty over agreeableness, no over-hedging, and they
-have caught real mistakes by playing the game (the "rigged" rebalance overshoot, the guard
-hovering). Verify by playing/looking at screenshots, not just by statistics — the single
-biggest lesson of this project is that numbers that look right can feel wrong.
+**How the user likes to work:** blunt honesty over agreeableness, no over-hedging; they catch real mistakes
+by playing the game. Verify by playing/looking at screenshots, not just statistics.
 
 ## The jam
 
@@ -229,7 +219,7 @@ and `underwriter.html` prototypes, where sloppy play returned ~93.5% and sharp p
 ~97.8%. Chip Thief has zero decisions, so its declared RTP holds for every player
 with no caveat.
 
-**Art direction is Cam 04 surveillance, not neon.** A "NEON HEIST" asset sheet exists
+**Art direction is Cam 04 surveillance inside the feed, a warm cabinet around it, never neon.** A "NEON HEIST" asset sheet exists
 in `Asset/Chip Thief Assets.dc.html` and was implemented then replaced. Reasons: the
 magenta/cyan/yellow-on-purple palette is the default of every crypto game (bad for
 Novelty and for "no AI slop"), it fought the comedy (neon is *cool*, the joke is a
