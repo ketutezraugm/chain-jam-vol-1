@@ -25,7 +25,7 @@ untracked). No build step.
 
 **UI chrome redesign (2026-09-26, from the Claude Design export "Assets New/", gitignored).** The page
 frame is now a warm "cabinet" (Bodoni Moda wordmark/figures, Archivo text, brass + lacquer-red accent,
-felt-brown surfaces): topbar, feed, one cabinet strip (balance | stake steppers + 50/100/500 presets |
+felt-brown surfaces), FULL-BLEED since 2026-09-26: the feed is `position:absolute; inset:0` (world height fixed at 620, width follows the viewport), topbar and cabinet float over it, the cabinet sits in the floor strip below the goose's feet, bottom strips are offset 104px above it. Topbar, feed, one cabinet strip (balance | stake steppers + 50/100/500 presets |
 Release). The feed keeps its green CRT grade; only the frame changed. Removed from the player's view:
 sidebar, camera/tape/lock readouts, staff-deployed/recovered HUD, the three boxed first-run notes, the
 "CONTAINMENT FAILED" stamp. Operator stuff lives in the **Info** `<dialog>` (how it works, keys, staff
