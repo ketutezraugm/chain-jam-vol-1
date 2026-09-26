@@ -21,21 +21,39 @@ untracked). No build step.
 2. Ask the Chain team (discord.gg/3kpZHvvTq) whether they deploy/whitelist the contract themselves: it has
    only run on the local simulator chain, is unaudited and not on Base.
 3. Store images in `prototypes/assets/` (icon/cover/social) were made for the old teal CCTV look; regenerate
-   them in the new warm palette if there is time.
+   them in the new casino palette (or screenshot the live game) if there is time.
 
-**UI chrome redesign (2026-09-26, from the Claude Design export "Assets New/", gitignored).** The page
-frame is now a warm "cabinet" (Bodoni Moda wordmark/figures, Archivo text, brass + lacquer-red accent,
-felt-brown surfaces), FULL-BLEED since 2026-09-26: the feed is `position:absolute; inset:0` (world height fixed at 620, width follows the viewport), topbar and cabinet float over it, the cabinet sits in the floor strip below the goose's feet, bottom strips are offset 104px above it. Topbar, feed, one cabinet strip (balance | stake steppers + 50/100/500 presets |
-Release). The feed keeps its green CRT grade; only the frame changed. Removed from the player's view:
-sidebar, camera/tape/lock readouts, staff-deployed/recovered HUD, the three boxed first-run notes, the
-"CONTAINMENT FAILED" stamp. Operator stuff lives in the **Info** `<dialog>` (how it works, keys, staff
-cuts, declared RTP, Maths and fairness = the self-check, Run log). First run shows one line of guidance in
-the feed plus a "Press Space" pointer. Results are a bottom-left slab (tag, Bodoni figure, one deadpan line,
-Stake/Payout/Net): brass only when net > 0, a <1× escape is cream + "Escaped · short". Normal results fade
-after ~3.6s, BIG/JACKPOT stay until the next release. Fonts are four extra self-hosted woff2 (~58 kB).
-Palette/tokens are the `:root` block in `chip-thief.html`. Verified by screenshot at 1280×720, 1024×560,
-390×800 and via forced BIG/JACKPOT copies. Not re-verified: chain mode inside the simulator after this
-restyle (the bridge code was not touched, only DOM ids/markup), and the caught/partial slabs by eye.
+**Art pass (2026-09-26, Claude Design "Chip Thief World" + `Assets New/world.js`, gitignored).** The green CCTV
+grade is GONE: the room is a warm casino (oxblood walls, brass, emerald felt, sodium lamp light) and the camera
+survives only as light treatment (scanlines, vignette, REC dot, timecode, the dashed reticles/labels in paper
+cream instead of green). `world.js` is inlined in `chip-thief.html` as `const CTW = (function(){...})()`
+(only the layer/actor code the game uses). `drawWorld` calls `CTW.backdrop` (shell, far: coffers/chandeliers/
+balcony/marquee signs, mid: slot banks/roulette/craps/palms/pillars, light shafts + dust, lane scrim, carpet),
+`CTW.near` (rope stanchions + foreground table edge, drawn after staff/pickups and before the goose),
+`CTW.exitSign`/`exitDoor`, and the world's `GOOSE`/`STAFF` poses. The game keeps its own legs (`gooseLegs`,
+feet plant), chips, plaques, scenery, particles and every gameplay hook. Goose draw scale is `GS=.78`. New
+'panic' pose while `pursuit<190`. Staff with no lunge pose lean forward instead. Exit sign hangs at y=118 so
+it clears the marquee lettering.
+**Performance rule:** the mid layer is hundreds of small draws (46 fps at 1440x800 on a real GPU when drawn
+live, vs 120 before the art pass). `midCached` renders it into an offscreen strip ~8x/s and blits it with the
+scroll offset every frame: back to ~100 fps. Measure with headless Chrome WITH the GPU (do not pass
+`--disable-gpu`; software raster is 3-5x slower and misleading) and skip layers one at a time to bisect. Far,
+shafts, floor are still drawn live. If it gets tight again, cache those the same way. Not verified on a real
+low-end machine.
+Portrait phones work but are cramped (hint text sits over the goose); not a priority.
+
+**UI chrome (2026-09-26, "Chip Thief Chrome").** Full-bleed: the feed is `position:absolute; inset:0` (world
+height fixed at 620, width follows the viewport), topbar and cabinet float over it, the cabinet sits in the
+floor strip below the goose's feet, bottom strips are offset 104px above it. Cabinet strip: balance | stake
+steppers + 50/100/500 presets | Release. Removed from the player's view: sidebar, camera/tape/lock readouts,
+boxed first-run notes, the "CONTAINMENT FAILED" stamp. Operator stuff lives in the **Info** `<dialog>` (how
+it works, keys, staff cuts, declared RTP, Maths and fairness = the self-check, Run log). First run shows one
+line of guidance plus a "Press Space" pointer. Results are a bottom-left slab (tag, Bodoni figure, one deadpan
+line, Stake/Payout/Net): gold only when net > 0, a <1x escape is cream + "Escaped · short". Normal results
+fade after ~3.6s, BIG/JACKPOT stay until the next release. Tokens are the `:root` block in `chip-thief.html`.
+Verified by screenshot at 1440x800, 2560x1080, 390x844 and via forced BIG/JACKPOT copies. Not re-verified:
+chain mode inside the simulator after the restyle (bridge code untouched, only DOM ids/markup changed), and
+the caught/partial slabs by eye.
 
 **Environment gotchas.** jam.chain.wtf needs a VPN from the user's country. The local test stack
 (`casino-sdk/`: `npm start` = chain :8545 + VRF + simulator :3300) is gitignored and re-downloadable.
